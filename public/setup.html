@@ -72,7 +72,7 @@
       <ol>
         <li>Open <a href="https://sheets.new" target="_blank" rel="noopener">sheets.new</a> (a blank Google Sheet). Name it, e.g. "<span class="map-title">your map</span> data".</li>
         <li><b>Extensions → Apps Script</b>. Select everything in <code>Code.gs</code> and delete it, then paste the sheet script: <button type="button" id="copy-script">Copy the sheet script</button> <span class="status" id="script-status"></span></li>
-        <li>Click <b>Save</b> (💾). Go back to the sheet tab and <b>reload</b> it. A menu named after your map appears (give it a few seconds).</li>
+        <li>Click <b>Save</b> (💾). Go back to the sheet tab and <b>reload</b> it. A <b>Climate Organization Map</b> menu appears (give it a few seconds; it takes your map's name after setup).</li>
         <li>That menu → <b>Set up sheet + forms (run once)</b>. Allow the permissions (if Google says the app isn't verified: <b>Advanced → Go to … (unsafe)</b>; it's your own script). Paste the address from step 1 when asked, and your core team's emails.</li>
       </ol>
       <p class="status" id="sheet-status"></p>
@@ -134,7 +134,7 @@
 
   getJson(base + "region.json").then(function (r) {
     document.title = "Set up " + r.title;
-    $("title").textContent = "Set up the " + r.title;
+    $("title").textContent = "Set up: " + r.title;
     document.querySelectorAll(".map-title").forEach(function (e) { e.textContent = r.title; });
     var edit = r.repo ? "https://github.com/" + r.repo + "/edit/" + (r.branch || "main") + "/map.config.ts" : "";
     var readme = r.repo ? "https://github.com/" + r.repo + "#readme" : "";

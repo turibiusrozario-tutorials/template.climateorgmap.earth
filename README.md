@@ -28,7 +28,8 @@ Everything happens in the browser.
 6. Open [sheets.new](https://sheets.new) and name the sheet (e.g. "WI Climate Organization Map data").
 7. On your `setup.html` page, click **Copy the sheet script**. In the sheet: **Extensions → Apps Script**, select all
    in `Code.gs`, paste over it, **Save**.
-8. Reload the sheet. In the new menu named after your map: **Set up sheet + forms (run once)**. Allow the permissions
+8. Reload the sheet. In the new **Climate Organization Map** menu (it takes your map's name after setup): **Set up
+   sheet + forms (run once)**. Allow the permissions
    (Google may say the app isn't verified: **Advanced → Go to … (unsafe)**; it's your own script). If it stops after
    asking for permission, click the menu item again. Paste your map's address when asked, and your core team's emails.
 9. In Apps Script: **Deploy → New deployment** → ⚙ **Web app**. Execute as **Me**, access **Anyone** → **Deploy** →
