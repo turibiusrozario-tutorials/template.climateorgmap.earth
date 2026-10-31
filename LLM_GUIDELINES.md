@@ -1,6 +1,6 @@
 # LLM guidelines
 
-Shared rules for anyone (human or AI) using an LLM — Claude Code, ChatGPT, Copilot, etc. — to work on the MA Climate Coalition Map.
+Shared rules for anyone (human or AI) using an LLM — Claude Code, ChatGPT, Copilot, etc. — to work on the Climate Organization Map template (and the maps made from it).
 
 1. Be brief in final answers.
 2. You are an LLM, so consider if you could be wrong. I'm a human, so consider if I could also be wrong, or if there could be better things.
@@ -16,5 +16,5 @@ Shared rules for anyone (human or AI) using an LLM — Claude Code, ChatGPT, Cop
 7. The default tag is `[2]`, but the tag is context dependent (e.g. if I ask you to teach me, it is clearly `[4]`).
 8. Always `git pull` and check for pending merge requests when coding after a pause.
 9. Use merge requests (pull requests) instead of pushing changes directly.
-10. We work on `development_branch`, not `main`.
+10. Work on a branch and open a pull request into the deploy branch (`main` in the template; the MA map uses `development_branch`).
 11. Log what you did and why in `<username>_LLM.log` (e.g. `nkessel_LLM.log`).

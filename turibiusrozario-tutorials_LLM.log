@@ -1,0 +1,15 @@
+2026-10-31  Created the forkable template from nkessel/openthink_mycc development_branch (8448878).
+  Why: a new map took about an hour of hand edits (Code.gs REGION, index.html, region/data/forms config, form-fields
+  script, repository variable, environment rule). Goal: under 15 minutes, browser only, with updates via Sync fork.
+  What:
+  - map.config.ts is the only file a map edits; the state code fills in bounds (Census 1:10m outlines), capital,
+    time zone and name (src/us-states.ts; every capital checked inside its state, every time zone checked valid).
+  - Build injects title + land acknowledgement, emits region.json and apps-script.txt (with a version hash).
+  - Code.gs reads its region from the site, asks for the site address + admin emails during setup, serves the forms'
+    links and question ids in the feed (no copying into src/forms.config.ts, no form-fields.mjs), hides MA-only menu items.
+  - setup.html: a self-checking checklist. Workflows deploy from the default branch; the nightly backup reads dataUrl.
+  - scripts/sync-upstream.mjs: merge MA changes while keeping a map's own files.
+  - Tests: new tests/template.test.cjs; old tests now read a frozen MA fixture so they pass with empty data.
+  Checked: build, check:apps-script, all Apps Script tests; browser smoke tests of the MA config (live data), the
+  empty template, a WI config (geographic view opens on WI), and setup.html.
+  Not checkable from here: the Google side (Apps Script editor, forms, web app) end to end; needs the README test run.

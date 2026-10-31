@@ -1,7 +1,9 @@
-# Setup: sheet, forms, and website (about 20 minutes, once)
+# Setup: sheet, forms, and website (about 15 minutes, once)
+
+The short version is in the [README](../README.md#start-your-own-map-about-15-minutes); your site's `setup.html` checks each step. This page has the details.
 
 **How it fits together**
-- **Google Sheet ("MA Climate Organization Map data")** — the source of truth for the map. Only the core team can open it.
+- **Google Sheet ("<your map> data")** — the source of truth for the map. Only the core team can open it.
 - **Five Google Forms** — how point-people update their own org and add events/projects. They sign in with Google; the script checks their email against the **Editors** tab before changing anything.
 - **Website (GitHub Pages)** — a static site that reads the sheet's public data live, with a nightly backup copy in the repo.
 
@@ -17,7 +19,7 @@ Every question is optional except "which one is this about?". Blank answers neve
 
 ## Access, review, and the Change Log
 
-- **Admins** (edit everything, approve reviews, get alerts): the core team. Their emails are kept out of the code: in the Apps Script editor, **Project settings → Script properties**, add `ADMIN_EMAILS` with the emails separated by commas. Editors-tab rows with role `admin` are admins too. The map's name, state and pin box are in `REGION` at the top of `Code.gs`.
+- **Admins** (edit everything, approve reviews, get alerts): the core team. Their emails are kept out of the code: in the Apps Script editor, **Project settings → Script properties**, add `ADMIN_EMAILS` with the emails separated by commas. Editors-tab rows with role `admin` are admins too. **Set up sheet + forms** asks for them the first time. The map's name, state and pin box come from the site (`map.config.ts` → `<site>/region.json`); the menu's **Connect to the map's website** reads them again.
 - **Point-people**: add a row on the **Editors** tab — their email, and the `org_ids` and/or `coalition_ids` they manage (comma-separated ids from the Organizations/Coalitions tabs). One person can manage several.
 - **Anything not allowed** (unknown email, someone else's org, a new org) goes to **Needs Review** instead of the map, is flagged in **Change Log** (highlighted yellow for unauthorized attempts), and emails the admins. Tick **approve** to apply it. When a new org is approved, the person who proposed it becomes its point-person automatically.
 - **Email verification** (Oct 23): a new organization always needs a verified (Google sign-in) email; one sent without it is held, and can't be approved either. A point person typed on the organization form becomes an editor straight away only when it's the submitter's own signed-in email. Any other address is added to **Editors** as `pending` (allowed nothing) and emailed a one-time link; opening it makes them an editor and applies anything of theirs that was waiting. The link uses the web app's address, so redeploy a **New version** after updating the script.
@@ -25,38 +27,46 @@ Every question is optional except "which one is this about?". Blank answers neve
 
 ## 1. Add the script to the sheet
 
-1. Open the [**MA Climate Organization Map data**](https://docs.google.com/spreadsheets/d/187YVEn7wmtyso30Q453uWzSPcXLVQN2I-8UN86swT7E/edit) Google Sheet (shared with the core team).
-2. **Extensions → Apps Script**. Delete what's in `Code.gs`, paste in all of [`Code.gs`](Code.gs), click **Save**.
-3. Close that tab and reload the sheet. A **MA Climate Organization Map** menu appears.
+1. Make a new Google Sheet ([sheets.new](https://sheets.new)), named after your map.
+2. **Extensions → Apps Script**. Delete what's in `Code.gs` and paste in the sheet script: your site's `setup.html` →
+   **Copy the sheet script** (or open `<your site>/apps-script.txt`; it is [`Code.gs`](Code.gs) and
+   [`Confirm.gs`](Confirm.gs) together, as built with your site). Click **Save**.
+3. Close that tab and reload the sheet. A menu named after your map appears (before setup it's called
+   "Climate Organization Map").
 
 ## 2. Build everything
 
-1. **MA Climate Organization Map → Set up sheet + forms (run once)**.
-2. Approve the permission prompt (it creates forms, edits this sheet, sends review alerts, and looks up addresses for map pins). If Google says the app is unverified: **Advanced → Go to project** — it's your own script.
-3. When it finishes: the tabs are filled from `development_branch`, the four forms exist and are shared with the core team, and their links are on **Start Here**.
+1. Menu → **Set up sheet + forms (run once)**.
+2. Approve the permission prompt (it creates forms, edits this sheet, sends review alerts, reads your site's settings,
+   and looks up addresses for map pins). If Google says the app is unverified: **Advanced → Go to project (unsafe)**:
+   it's your own script. If nothing more happens after approving, run the menu item again.
+3. It asks for your map's web address (`https://<you>.github.io/<repo>/`, or your custom domain) and reads the map's
+   name and state from it, then for the core team's emails (blank = just you).
+4. When it finishes: the tabs exist (empty for a new map; a sheet rebuilt later starts from the site's nightly
+   backup), the five forms exist and are shared with the core team, and their links are on **Start Here**.
 
 Running it again is safe: it skips forms that already exist (only updating their titles) and never overwrites filled tabs.
 
 ## 3. Publish the live data link
 
 1. In Apps Script: **Deploy → New deployment → Web app**. Execute as **Me**, access **Anyone**. Copy the URL.
-2. It only serves public data — never Editors, Needs Review, Feedback, or Change Log.
+2. It only serves public data and the forms' links — never Editors, Needs Review, Feedback, or Change Log.
 3. **After changing `Code.gs` later:** the web app keeps serving the version it was deployed with. Go to **Deploy → Manage deployments → ✏️ → Version: New version → Deploy** (same URL) so the site sees the change.
 
-## 4. Connect the website (one small PR)
+## 4. Connect the website
 
-In `development_branch`, open a PR that:
-- pastes the web app URL into `LIVE_DATA_URL` in [`src/data.config.ts`](../src/data.config.ts), and
-- pastes the JSON from the Start Here row "For the site: paste into src/forms.config.ts" over `FORMS` in [`src/forms.config.ts`](../src/forms.config.ts).
+Put the web app URL into `dataUrl` in [`map.config.ts`](../map.config.ts) and commit. That's all: the site reads the
+forms' links and questions from the web app, so after a page reload the **+** button opens your forms, pre-filled with
+whatever org or coalition is open. Approved edits show up within a minute of a reload.
 
-After that, approved edits show up on the site within a minute of a page reload, and the **+** button opens the forms pre-filled with whatever org or coalition is open.
+## 5. GitHub Pages and the nightly backup
 
-## 5. Turn on GitHub Pages (repo owner, once)
-
-1. **Settings → Pages → Build and deployment → Source: GitHub Actions**.
-2. **Settings → Environments → github-pages → Deployment branches**: add `development_branch` (by default only `main` may deploy).
-3. **Settings → Secrets and variables → Actions → Variables**: add `OPENTHINK_DATA_URL` = the web app URL. This turns on the nightly backup (a PR with the latest `data.json`, only when something changed).
-4. Re-run **Actions → Deploy to GitHub Pages**. The site is at `https://ma.climateorgmap.earth/` (the old `https://nkessel.github.io/openthink_mycc/` address redirects there).
+1. **Settings → Pages → Build and deployment → Source: GitHub Actions**. The site deploys from the default branch
+   (`main`); a repository variable `DEPLOY_BRANCH` picks another (then allow that branch under **Settings →
+   Environments → github-pages**).
+2. The nightly backup (`.github/workflows/sync-data.yml`) reads `dataUrl` from `map.config.ts`, commits
+   `public/data.json` when the data changed, and redeploys. Set the repository variable `DATA_SYNC_PR = true` to get a
+   pull request instead. If **Actions → Nightly data snapshot** says it is disabled, click **Enable workflow**.
 
 ## Who owns an event or project
 
@@ -86,7 +96,7 @@ Run **MA Climate Organization Map → Update the forms** after pasting a new ver
 
 ## Edit links and emails to submitters
 
-- Every **Edit** button on the map opens the right form with everything already filled in. People only change what's different, and blank answers still keep the current value. **Copy as a new event** fills in an existing event as a new one, leaving the date blank. If you add, rename or remove questions on a form, run `node scripts/form-fields.mjs` in the repo so the site knows the new question ids.
+- Every **Edit** button on the map opens the right form with everything already filled in. People only change what's different, and blank answers still keep the current value. **Copy as a new event** fills in an existing event as a new one, leaving the date blank. If you add, rename or remove questions on a form, run **Refresh form dropdowns** from the menu: the site picks up the new question ids from the web app.
 - Whoever submits a form gets a short email. It says either that the change is on the map, or that it's waiting for the map team (and a second one when it goes live). To turn these off, add the Script property `NOTIFY_SUBMITTERS` = `off`.
 
 ## Topics on the forms (Wikipedia-based or group-based)
@@ -113,14 +123,14 @@ The social justice layers (Palestinian rights, immigrant rights, Jewish spiritua
 - Logos are submitted as links (Forms can't take uploads without extra setup). Google Drive share links are converted automatically.
 - "Suggested connections" are only as good as the descriptions and topics groups fill in.
 
-## 5. Updating the data and adding the actions form later (existing sheet)
+## Updating the data and adding the actions form later (existing sheet)
 
 Use this when the repo has new events/projects/actions (from `node scripts/apply-current-events.mjs --csv DIR`) or a new form.
 
 1. **Update the script.** Extensions → Apps Script → replace `Code.gs` with the repo's, **Save**. Then **Deploy → Manage deployments → ✏️ → Version: New version → Deploy**.
 2. **Replace the data tabs.** For each of **Projects**, **Events** and **Actions**: open the tab, **File → Import → Upload** the matching CSV, choose **Replace current sheet**. (This wipes the old placeholders. New columns such as `recurrence`, `needs_info`, `host_org_id`, `description` and `link` come in with the CSV.) Edits people already made through the forms live in these tabs, so export first if you need them.
 3. **Build the new form.** Reload the sheet, then **MA Climate Organization Map → Set up sheet + forms**. It skips the forms that exist, adds the missing "action" form and the event form's repeat question, and refreshes every dropdown from the tabs.
-4. **Connect the site.** On **Start Here**, copy the JSON in the row "For the site: paste into src/forms.config.ts" and send it over (or paste it over `FORMS` in `src/forms.config.ts`). The `action` entry makes the "Update this action" link on the site open the new form.
+4. **Connect the site.** Nothing to copy: once the web app is redeployed (New version), the site reads the new form's link from it, and the "Update this action" link opens the new form.
 
 Anything a point person edits through a form clears that item's "needs more information" notice.
 

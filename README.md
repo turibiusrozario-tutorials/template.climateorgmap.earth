@@ -1,92 +1,117 @@
-# MA Climate Organization Map
+# Climate Organization Map: template
 
-A force-directed network map of Massachusetts climate coalitions and their member organizations. Coalitions are sized by member count; edges denote membership. Members in multiple coalitions naturally land between hubs.
+Start a climate organization map for your state or region: a network map of coalitions and the groups in them, a
+geographic map, and lists of events, projects and actions. Point people keep their own group's information current
+through Google Forms; your core team approves everything else. It's the code behind the
+[MA Climate Organization Map](https://ma.climateorgmap.earth), with Massachusetts taken out.
 
-Org list, org data, and logos come from the [MA Climate Organization Map](https://github.com/aissatabarry/ma-climate-coalition-map). Coalition projects, events, and actions are still placeholder data.
+Everything is free: the site runs on GitHub Pages, the data lives in your Google Sheet, and the forms are Google Forms
+that the sheet builds for you. **You edit one file, [`map.config.ts`](map.config.ts).**
 
-> **Working with an LLM on this repo?** Read and follow [**LLM_GUIDELINES.md**](LLM_GUIDELINES.md) — the team's shared rules (branching on `development_branch`, PRs only, response tags, logging).
+## Start your own map (about 15 minutes)
 
-## Views
+You need a GitHub account and a Google account (ideally a shared team account: see [Who owns what](#who-owns-what)).
+Everything happens in the browser.
 
-- **Map** — force-directed graph of coalitions and orgs. Edges show coalition membership and, in amber, **org-to-org connections** (thicker = they work together more often). Search box to jump to any org or coalition. Click any node for its details, connections, projects, events, and **suggested connections**.
-- **Geographic** — Leaflet map of coalitions and org headquarters (remote orgs aren't pinned). Checkboxes add **event** and **project** pins (off by default). Search a place, org, coalition (zooms to its members), event or project; **What's near me?** lists everything within 15 km.
-- **Organizations** — searchable, filterable list of every org, plus **Suggested connections**: pairs of similar orgs that haven't said they work together.
-- **Events** / **Projects** — searchable lists across coalitions and orgs.
-- **+ button** — opens the Google Forms to add or update an org, event, or project, or send feedback (pre-filled with whatever is open).
+**On GitHub (5 minutes)**
 
-Hosted as a static site on GitHub Pages; data comes live from the Google Sheet (see [`apps-script/SETUP.md`](apps-script/SETUP.md)), with `public/data.json` as the fallback.
+1. On this repo's page, click **Fork**. Give it a name (e.g. `wi-climate-map`) and click **Create fork**.
+2. In your fork: **Actions** tab → **I understand my workflows, go ahead and enable them**.
+3. **Settings → Pages → Build and deployment → Source: GitHub Actions**.
+4. Open [`map.config.ts`](map.config.ts) → pencil icon (**Edit**). Set `title` (e.g. `"WI Climate Organization Map"`),
+   `state` (e.g. `"WI"`) and your `landAcknowledgement`. **Commit changes**.
+5. **Actions** tab: wait for **Deploy to GitHub Pages** to get a green check (about 2 minutes). Your map is at
+   `https://<your-github-name>.github.io/<repo-name>/`. Open **`…/setup.html`** there: it checks every step from here on.
 
-## Start a map for your region
+**In Google (8 minutes)**
 
-See [`public/guide.html`](public/guide.html) (live at `/guide.html` on the site): fork, run `node scripts/start-new-region.mjs`, set `src/region.config.ts` and `REGION` in `apps-script/Code.gs`, then set up your own sheet and forms.
+6. Open [sheets.new](https://sheets.new) and name the sheet (e.g. "WI Climate Organization Map data").
+7. On your `setup.html` page, click **Copy the sheet script**. In the sheet: **Extensions → Apps Script**, select all
+   in `Code.gs`, paste over it, **Save**.
+8. Reload the sheet. In the new menu named after your map: **Set up sheet + forms (run once)**. Allow the permissions
+   (Google may say the app isn't verified: **Advanced → Go to … (unsafe)**; it's your own script). If it stops after
+   asking for permission, click the menu item again. Paste your map's address when asked, and your core team's emails.
+9. In Apps Script: **Deploy → New deployment** → ⚙ **Web app**. Execute as **Me**, access **Anyone** → **Deploy** →
+   copy the **Web app URL**.
+
+**Back on GitHub (2 minutes)**
+
+10. Edit `map.config.ts` again: paste the URL into `dataUrl`. **Commit changes**. After the deploy (about 2 minutes),
+    every step on `setup.html` is green. Press **+** on your map to add your first group.
+
+That's it: approved form submissions show on the map within a minute, and a backup of the data is saved into the repo
+every night.
+
+### What `map.config.ts` sets
+
+| Setting | What it's for |
+|---|---|
+| `title` | The map's name: page title, top bar, form titles, emails, the sheet's menu |
+| `state` | Two-letter code. Fills in where the geographic map opens, the main city (where a group with no address yet is placed), the time zone and the state name |
+| `landAcknowledgement` | Shown on the loading screen and under "Land acknowledgement" in the menu |
+| `dataUrl` | The sheet's web app URL (step 9) |
+| optional | `shortTitle`, `timeZone`, `bounds`, `fallback`, `exampleTowns`, `exampleOrgs`, `geo` (see [`src/map-config.ts`](src/map-config.ts)) |
+
+The sheet reads the name and state from your site, and the site reads the forms from the sheet, so nothing else is
+copied by hand.
+
+## Get updates
+
+1. On your fork's GitHub page: **Sync fork → Update branch**. The template never changes `map.config.ts`, your data or
+   your logos, so this doesn't conflict. Don't edit the template's other files (this README included) in your copy.
+2. Open your `setup.html`. If **Sheet script up to date** isn't green: copy the script again, paste it over `Code.gs`,
+   **Save**, then **Deploy → Manage deployments → ✏️ → Version: New version → Deploy** (the URL stays the same), and
+   run **Update the forms** from the sheet's menu.
+
+## A climateorgmap.earth address
+
+Maps can have an address like `wi.climateorgmap.earth`.
+
+1. Ask first, through the [MA map's feedback form](https://docs.google.com/forms/d/e/1FAIpQLScwazw1P9rbQT4KAoUn0DSuI6B9Lpdx-kcrZXdZV45-HlAVKw/viewform):
+   the address you'd like, your repo's link and who maintains it.
+2. Once approved: **Settings → Pages → Custom domain**: `wi.climateorgmap.earth` → **Save** (before the DNS record
+   exists, so nobody else can claim it).
+3. The climateorgmap.earth team adds `CNAME wi → <your-github-name>.github.io`.
+4. When the address works, tick **Enforce HTTPS** (can take up to a day). Then, in the sheet's menu, **Connect to the
+   map's website** with the new address.
+
+If a map shuts down, its DNS record is removed so the address can't be taken over.
+
+## Who owns what
+
+- The sheet's script and web app run as the Google account that set them up. If that account closes, the forms stop
+  recording and the map stops updating. Use a shared team account, or write down who takes over.
+- The fork belongs to whoever made it: add a second maintainer (**Settings → Collaborators**).
+- Share the sheet only with your core team. Point people never open it: they use the forms. On the sheet's **Editors**
+  tab, give each group's point person (up to three) the group's id.
+
+## How it works
+
+| Piece | What it does | Where it lives |
+|---|---|---|
+| The website | The map people look at. Never changes data itself. | Your fork, published by GitHub Pages (`.github/workflows/pages.yml`) |
+| The Google Sheet | The source of truth: every coalition, group, event, project and action, and who may edit each. | Your Google Drive |
+| Google Forms | How point people add and fix their group's information (Google sign-in; others wait in **Needs Review**). | Built by the sheet's script (`apps-script/Code.gs`) |
+
+The sheet's web app publishes only public tabs (never Editors, Needs Review, Feedback or Change Log), plus the forms'
+links. The site falls back to `public/data.json` (the nightly backup, `.github/workflows/sync-data.yml`) when Google is
+unreachable. More on the sheet: [`apps-script/SETUP.md`](apps-script/SETUP.md).
+
+## For the template's maintainers
+
+- The MA map ([nkessel/openthink_mycc](https://github.com/nkessel/openthink_mycc)) is where the code is developed for
+  now. To bring its changes in: `node scripts/sync-upstream.mjs`, check `npm run build && npm run test:apps-script`,
+  push. It keeps the template's own files (`OWN` in the script): settings, empty data, notes.
+- Never change a map's own files here (`map.config.ts`, `public/data.json`, `public/thoughts.json`, `public/logos/`,
+  `src/logos.web.json`): every fork would get a conflict. New settings get a default in `src/map-config.ts` instead.
+- Later the template can become the upstream for every map, MA included: the MA map then runs the same script the
+  other way (`node scripts/sync-upstream.mjs <template url> main`) and moves its settings into `map.config.ts`.
 
 ## Run locally
 
 ```bash
 npm install
-npm run dev
+npm run dev     # http://localhost:5173
+npm run build   # typecheck + production build into dist/
+npm run test:apps-script
 ```
-
-Then open http://localhost:5173.
-
-## Build for production
-
-```bash
-npm run build
-```
-
-Output goes to `dist/`. Deploys cleanly to Vercel (Vite auto-detected — no config needed).
-
-## Data
-
-Data lives in `public/data.json`. Organizations (and `public/logos/`) are imported from the MA Climate Organization Map:
-
-```bash
-node scripts/import-orgs.mjs            # fetches the latest from GitHub
-```
-
-This replaces the org list, keeps projects/events/actions for coalitions that are still on the map, and drops coalitions (and their projects/events) that aren't. `scripts/generate-data.mjs` is the original placeholder generator.
-
-### Editing data with the forms
-
-The live data lives in a Google Sheet (tabs: Coalitions, Organizations, Projects, Events, Actions, Feedback, Change Log) with four Google Forms attached — update your organization, add/edit an event, add/edit a project, and send feedback. Every form field is optional except "which one is this about?", so groups only fill in what's missing or changed; each submission is written into the sheet and logged in Change Log.
-
-Setup lives in [`apps-script/SETUP.md`](apps-script/SETUP.md). To bring the sheet's latest data into the site:
-
-```bash
-OPENTHINK_DATA_URL="https://script.google.com/macros/s/…/exec" npm run pull-data
-```
-
-The schema:
-
-- `coalitions[]` — id, name, abbrev, color, lat/lng, member_ids, projects, events, actions, focus_tags
-- `organizations[]` — id, name, type, geographic_focus, lat/lng, coalition_ids, plus optional abbrev, logo, website, public_contact, topic_tags, profile (youth-serving, scores…), coalition_weights
-- `edges[]` — `{ source: coalition_id, target: org_id }`
-
-## Stack
-
-- Vite + TypeScript
-- D3 (force layout)
-- Leaflet + CARTO dark tiles (geographic view)
-- No backend yet — static SPA
-
-## Zoom-in view and public "thinking"
-
-Click any group (coalition or organization) on the map to zoom in. Its **projects** (green), **events** (amber) and
-**thinking** (purple) float around it as bubbles, right next to it, while partner organizations recede. Click a bubble
-for details; press `Esc` or "Back to network" to zoom out.
-
-"Thinking" is what a group is working through in the open: topics, decisions and open questions. It lives in
-`public/thoughts.json`, separate from the sheet, so every item is reviewed and **approved by the group before it is
-published**. Drafts never go in that file. Format:
-
-```json
-{ "<org or coalition id>": [
-  { "id": "unique_id", "kind": "topic | decision | question | update",
-    "text": "One or two plain sentences. No names, emails, or anything sensitive.",
-    "date": "2026-09-06", "source": "MYCC full-coalition call, Sept 6, 2026", "link": "https://… (optional)" }
-] }
-```
-
-Guidelines: summarize at the level of ideas and decisions (never people), leave out anything the group hasn't agreed to
-share, and always say where it came from.
