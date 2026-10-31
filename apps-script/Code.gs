@@ -2822,9 +2822,7 @@ function formFields_(form, known) {
     var sample = null;
     try { sample = (type === 0 || type === 1) ? sampleResponse_(it, type, 'q' + i + 'x') : (type <= 4 ? sampleResponse_(it, type, '', used) : null); } catch (e) { sample = null; }
     if (sample && sample.v !== null) {
-      batch.withItemResponse(sample.r);
-      used[sample.v] = title;
-      inBatch++;
+      try { batch.withItemResponse(sample.r); used[sample.v] = title; inBatch++; } catch (e) { /* found on its own below */ }
     }
     need.push({ it: it, type: type, title: title });
   });
