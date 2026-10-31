@@ -935,7 +935,11 @@ function seedSheet_(ss) {
   }
   var needsData = !ss.getSheetByName(TAB.orgs) || ss.getSheetByName(TAB.orgs).getLastRow() <= 1;
   // SEED_URL '' = start empty: the tabs get their headers and nothing else
-  var rows = needsData && SEED_URL ? sheetRowsFromData_(JSON.parse(UrlFetchApp.fetch(SEED_URL).getContentText())) : {};
+  var seed = null;
+  if (needsData && SEED_URL) {
+    try { seed = JSON.parse(UrlFetchApp.fetch(SEED_URL).getContentText()); } catch (e) { seed = null; } // no backup yet: start empty
+  }
+  var rows = seed && Array.isArray(seed.organizations) ? sheetRowsFromData_(seed) : {};
   if (!ss.getSheetByName(TAB.editors) || ss.getSheetByName(TAB.editors).getLastRow() <= 1) {
     rows[TAB.editors] = adminEmails_().map(function (e) { return [e, 'admin', '', '', '', 'core team']; });
   }
