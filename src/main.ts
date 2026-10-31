@@ -15,6 +15,7 @@ import { FORMS } from "./forms.config";
 import { webLogo } from "./weblogos";
 import { createFab, setFormLabelData, setItemLabelData } from "./fab";
 import { setPrefillData } from "./prefill";
+import { applyLiveForms } from "./forms.live";
 import { checkSources } from "./sourcecheck";
 import { lazyPage, preloadWhenQuiet } from "./lazypage";
 import { atFallback, geoCanLocate } from "./placed";
@@ -453,6 +454,7 @@ async function main() {
 
   // "+" button for proposing edits/additions through the forms (pre-filled from the open drawer)
   setFormLabelData(data.organizations);
+  if (currentMap.editable) applyLiveForms(data.forms); // the sheet's own form links (no copying them into the code)
   setPrefillData(data);
   setQuickFormData(data);
   setItemLabelData([...data.coalitions, ...data.organizations]);

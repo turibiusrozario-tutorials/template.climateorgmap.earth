@@ -187,6 +187,11 @@ export interface DataFile {
   coalitions: Coalition[];
   organizations: Organization[];
   edges: Edge[];
+  /** The sheet's form links and question ids (apps-script/Code.gs → siteForms_()); see src/forms.live.ts. */
+  forms?: {
+    links?: Partial<Record<"org" | "event" | "project" | "action" | "feedback", { url: string; orgEntry?: string; hostOrgEntry?: string; coalitionEntry?: string; itemEntry?: string }>>;
+    fields?: Record<string, Record<string, { entry: string; type: number; choices?: string[] }>>;
+  };
 }
 
 // Graph node + link types for D3 force layout.

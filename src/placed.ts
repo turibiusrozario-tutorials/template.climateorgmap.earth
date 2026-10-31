@@ -5,7 +5,8 @@ import { REGION } from "./region.config";
 
 /** The point the data uses when it only knows the state (statewide, national, or no address yet): REGION.fallback. */
 export const atFallback = (lat: number, lng: number) => Math.abs(lat - REGION.fallback.lat) < 1e-4 && Math.abs(lng - REGION.fallback.lng) < 1e-4;
-const FALLBACK_TOWN = new RegExp(`\\b${REGION.fallback.town}\\b`, "i");
+// No town (a region that isn't one state): never matches, so a group at the fallback point is never treated as placed there.
+const FALLBACK_TOWN = REGION.fallback.town ? new RegExp(`\\b${REGION.fallback.town.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`, "i") : /(?!)/;
 /** A real place for this group: not remote, and not the fallback point (unless the group really is in that town). */
 export function orgPlaced(o: Organization): boolean {
   if (o.remote || !Number.isFinite(o.lat) || !Number.isFinite(o.lng) || (o.lat === 0 && o.lng === 0)) return false;

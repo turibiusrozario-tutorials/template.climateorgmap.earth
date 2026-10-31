@@ -43,7 +43,13 @@ function sheet(name) {
   };
 }
 const ssObj = { getSheetByName: sheet, getUrl: () => "https://sheet", toast: () => {} };
-const props = { ADMIN_EMAILS: "admin1@example.org, admin2@example.org, admin3@example.org" };
+// The region normally comes from the map's website (connectSite_ saves its region.json here); the tests use MA's.
+const MA_REGION = {
+  title: "MA Climate Organization Map", stateName: "Massachusetts", stateCode: "MA",
+  bounds: { south: 41.18, north: 42.89, west: -73.51, east: -69.85 }, center: { lat: 42.3601, lng: -71.0589 },
+  exampleTowns: "Worcester, Cape Cod, Greater Boston, statewide", exampleOrgs: ["Sunrise Boston — monthly", "Mass Power Forward — a few times a year"],
+};
+const props = { ADMIN_EMAILS: "admin1@example.org, admin2@example.org, admin3@example.org", REGION_JSON: JSON.stringify(MA_REGION) };
 const mail = [];
 const cache = {};
 const ctx = {

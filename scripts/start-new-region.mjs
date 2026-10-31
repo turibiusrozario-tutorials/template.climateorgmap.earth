@@ -1,5 +1,6 @@
-// Turns a fork of the MA Climate Organization Map into an empty starting point for another region.
-// Run it once in your fork (see guide.html → "Start a map for your region"):
+// Turns a copy of the MA Climate Organization Map into an empty starting point for another region. The template
+// (github.com/turibiusrozario-tutorials/template.climateorgmap.earth) is already that, so a map forked from it
+// never needs this. Run it once in a copy of the MA map:
 //
 //   node scripts/start-new-region.mjs            shows what it would change (nothing is touched)
 //   node scripts/start-new-region.mjs --yes      makes the changes
@@ -8,14 +9,16 @@
 //   - public/data.json becomes an empty map (no coalitions, groups or links)
 //   - Massachusetts logos, the researched Vermont/Oregon maps, the money layer, the social justice layers,
 //     research notes and the MA team's work log are deleted
-//   - src/region.config.ts: extraMaps = false (only your map is shown)
-//   - src/data.config.ts: LIVE_DATA_URL = "" (until you publish your own sheet's web app)
-//   - src/forms.config.ts: the Massachusetts form links are cleared
-// Afterwards it lists the files you still edit by hand.
+//   - map.config.ts: a blank settings file (name, state, land acknowledgement and web app URL to fill in)
+//   - src/forms.config.ts + src/forms.fields.json: the Massachusetts form links are cleared (the sheet sends yours)
+// Afterwards it lists what you still set by hand.
 import { existsSync, readdirSync, rmSync, writeFileSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
 const go = process.argv.includes("--yes");
+
+/** The settings file a new map starts from (the same as the template's own map.config.ts). */
+const BLANK_CONFIG = readFileSync(new URL("./map.config.blank.ts", import.meta.url), "utf8");
 const done = [];
 const act = (what, fn) => {
   done.push(what);
@@ -46,18 +49,13 @@ const edit = (file, from, to, what) => {
   if (!from.test(s)) return;
   act(`${file}: ${what}`, () => writeFileSync(file, s.replace(from, to)));
 };
-edit("src/region.config.ts", /extraMaps:\s*true/, "extraMaps: false", "extraMaps = false (only your map)");
 edit("src/forms.config.ts", /url: "https:\/\/docs\.google\.com\/forms\/[^"]*"/g, 'url: ""', "clear the Massachusetts form links (the + button says the forms aren't connected yet)");
-edit("src/data.config.ts", /export const LIVE_DATA_URL =\s*"[^"]*";/, 'export const LIVE_DATA_URL = "";', 'LIVE_DATA_URL = "" (until your web app is published)');
+act("src/forms.fields.json → empty (the sheet's web app sends your forms' questions)", () => writeFileSync("src/forms.fields.json", "{}\n"));
+act("map.config.ts → a blank settings file to fill in", () => writeFileSync("map.config.ts", BLANK_CONFIG));
 
 console.log(go ? "Done:" : "Would do (run again with --yes to make these changes):");
 for (const d of done) console.log("  - " + d);
 console.log(`
-Still to edit by hand (guide.html → "Start a map for your region"):
-  - src/region.config.ts      your map's name, state, time zone, map bounds and main city
-  - apps-script/Code.gs       REGION at the top, and SEED_URL = '' to start the sheet empty
-  - index.html                the page title and the land acknowledgement
-  - src/data.config.ts        your web app URL, once it is published
-  - src/forms.config.ts       your forms' links (from the sheet's Start Here tab)
-  - GitHub Settings → Pages    your custom domain, if you have one (otherwise <you>.github.io/<repo>)
-  - README.md                 your map's name`);
+Still to set (README.md → "Start your own map"; <your site>/setup.html checks each step):
+  - map.config.ts             your map's name, state and land acknowledgement; later the sheet's web app URL
+  - GitHub Settings → Pages    your custom domain, if you have one (otherwise <you>.github.io/<repo>)`);

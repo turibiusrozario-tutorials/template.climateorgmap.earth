@@ -1,10 +1,13 @@
 name: Deploy to GitHub Pages
-# Publishes the site whenever development_branch changes (or on demand).
+# Publishes the site whenever the deploy branch changes (or on demand, or after the nightly data backup).
+# The deploy branch is the repo's default branch (main), unless the repository variable DEPLOY_BRANCH names another
+# (the MA map uses development_branch). Settings → Pages → Source must be "GitHub Actions".
 # The build writes version.json from the latest release tag, e.g. v1.0.0 (see vite.config.ts).
 on:
   push:
-    branches: [development_branch]
+    branches: [main, development_branch]
   workflow_dispatch:
+  workflow_call: # from sync-data.yml, after the nightly backup changed public/data.json
 permissions:
   contents: read
   pages: write
@@ -14,6 +17,7 @@ concurrency:
   cancel-in-progress: true
 jobs:
   deploy:
+    if: ${{ github.event_name != 'push' || github.ref_name == (vars.DEPLOY_BRANCH || github.event.repository.default_branch) }}
     runs-on: ubuntu-latest
     environment:
       name: github-pages
@@ -21,6 +25,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
+          ref: ${{ github.event_name == 'push' && github.sha || vars.DEPLOY_BRANCH || github.event.repository.default_branch || github.ref_name }}
           fetch-depth: 0 # tags, for version.json
       - uses: actions/setup-node@v4
         with:

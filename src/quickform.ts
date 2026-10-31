@@ -2,14 +2,12 @@
 // the group picked from a list as you type, and "Continue" opens the real Google Form with every answer already
 // filled in, so the last step is just Submit. Nothing is sent from the site itself; sign-in, access checks and the
 // review queue stay exactly as they are (Google Forms + apps-script/Code.gs).
-import FIELDS from "./forms.fields.json";
+import { FIELDS as forms, type FormField as Field } from "./forms.live";
 import type { DataFile, GraphNode } from "./types";
 import { FORMS } from "./forms.config";
 import { coalitionLabel, orgLabel } from "./fab";
 import { h } from "./dom";
 
-type Field = { entry: string; type: number; choices?: string[] };
-const forms = FIELDS as Record<string, Record<string, Field>>;
 type Kind = "org" | "event" | "project" | "action";
 
 const TITLES: Record<Kind, string> = {

@@ -1,8 +1,8 @@
-// Links to the MA Climate Coalition Map Google Forms, used by the + button and "Update this info" links.
+// Fallback links to the Google Forms, used by the + button and "Update this info" links.
 //
-// After running "MA Climate Coalition Map → Set up sheet + forms" in the Google Sheet, copy the JSON
-// from the "For the site" row on its Start Here tab and paste it over FORMS below.
-// Until then the + button explains that the forms aren't connected yet.
+// A map doesn't need to fill this in: the sheet's web app sends its forms' links and question ids with the data
+// (data.forms, see src/forms.live.ts and apps-script/Code.gs → siteForms_()). These values are only used when the
+// data has none (an older sheet script). Until there are forms, the + button explains they aren't connected yet.
 
 export interface FormLink {
   url: string;

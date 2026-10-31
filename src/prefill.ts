@@ -1,13 +1,11 @@
 // Fills in every answer the map already knows when someone opens a form to edit an organization, event,
-// project or action, so they only change what's different. Question ids come from src/forms.fields.json
-// (scripts/form-fields.mjs reads them off the live forms). A blank answer keeps the current value in the sheet,
+// project or action, so they only change what's different. Question ids come from the sheet
+// (data.forms, see src/forms.live.ts), else src/forms.fields.json. A blank answer keeps the current value in the sheet,
 // so anything we can't fill safely (unknown yes/no answers, private fields, text too long for a link) is left blank.
 import type { Action, Coalition, CoalitionEvent, DataFile, GraphNode, Organization, Project } from "./types";
-import FIELDS from "./forms.fields.json";
+import { FIELDS as forms, type FormField as Field } from "./forms.live";
 
-type Field = { entry: string; type: number; choices?: string[] };
 type FormFields = Record<string, Field>;
-const forms = FIELDS as Record<string, FormFields>;
 
 let coalitions: Coalition[] = [];
 export function setPrefillData(data: DataFile): void {

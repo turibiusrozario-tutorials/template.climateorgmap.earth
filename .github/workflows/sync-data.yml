@@ -1,41 +1,57 @@
 name: Nightly data snapshot
-# Saves the Google Sheet's current data into public/data.json as a backup the site can
-# fall back to. Opens a PR into development_branch only when something changed.
-# Needs the repository variable OPENTHINK_DATA_URL (Settings → Secrets and variables → Actions → Variables).
+# Saves the Google Sheet's current data into public/data.json, the backup the site falls back to (and that a rebuilt
+# sheet starts from). Reads the sheet's web app URL from map.config.ts (dataUrl), or the repository variable
+# OPENTHINK_DATA_URL if set; does nothing until there is one. Only commits when something changed, then redeploys.
+# With the repository variable DATA_SYNC_PR = true it opens a pull request instead (the MA map's way).
 on:
   schedule:
-    - cron: "17 7 * * *" # ~3am Boston
+    - cron: "17 7 * * *" # ~3am US Eastern
   workflow_dispatch:
 permissions:
   contents: write
   pull-requests: write
+  pages: write
+  id-token: write
 jobs:
   sync:
-    if: ${{ vars.OPENTHINK_DATA_URL != '' }}
     runs-on: ubuntu-latest
+    outputs:
+      committed: ${{ steps.save.outputs.committed }}
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: development_branch
+          ref: ${{ vars.DEPLOY_BRANCH || github.ref_name }}
       - uses: actions/setup-node@v4
         with:
           node-version: 22
       - run: node scripts/pull-data.mjs
         env:
           OPENTHINK_DATA_URL: ${{ vars.OPENTHINK_DATA_URL }}
-      - name: Open PR if data changed
+      - name: Save if data changed
+        id: save
         env:
           GH_TOKEN: ${{ github.token }}
+          BASE: ${{ vars.DEPLOY_BRANCH || github.ref_name }}
         run: |
           # generated_at always changes; only continue if real content changed
-          if git diff --quiet -I '"generated_at"' -- public/data.json public/sectors; then echo "No data changes"; exit 0; fi
-          branch="data-sync/$(date -u +%Y-%m-%d)"
-          git config user.name "openthink-bot"
+          if git diff --quiet -I '"generated_at"' -I '"updated_at"' -- public/data.json public/sectors; then echo "No data changes"; exit 0; fi
+          git config user.name "climate-map-bot"
           git config user.email "actions@users.noreply.github.com"
-          git checkout -b "$branch"
           git add public/data.json public/sectors
-          git commit -m "Nightly data snapshot from the MA Climate Coalition Map sheet"
-          git push -f origin "$branch"
-          gh pr create --base development_branch --head "$branch" \
-            --title "Nightly data snapshot $(date -u +%Y-%m-%d)" \
-            --body "Automatic backup of the Google Sheet's data. Merge to update the fallback copy the site uses when Google is unreachable." || true
+          if [ "${{ vars.DATA_SYNC_PR }}" = "true" ]; then
+            branch="data-sync/$(date -u +%Y-%m-%d)"
+            git checkout -b "$branch"
+            git commit -m "Nightly data snapshot from the map's sheet"
+            git push -f origin "$branch"
+            gh pr create --base "$BASE" --head "$branch" \
+              --title "Nightly data snapshot $(date -u +%Y-%m-%d)" \
+              --body "Automatic backup of the Google Sheet's data. Merge to update the fallback copy the site uses when Google is unreachable." || true
+          else
+            git commit -m "Nightly data snapshot from the map's sheet"
+            git push origin "HEAD:$BASE"
+            echo "committed=true" >> "$GITHUB_OUTPUT"
+          fi
+  deploy:
+    needs: sync
+    if: ${{ needs.sync.outputs.committed == 'true' }}
+    uses: ./.github/workflows/pages.yml

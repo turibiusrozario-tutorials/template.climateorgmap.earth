@@ -1,9 +1,11 @@
 /**
- * Climate Organization Map — forms + spreadsheet backend (this copy: see REGION below)
+ * Climate Organization Map — forms + spreadsheet backend (the region comes from the map's website: see REGION below)
  * ---------------------------------------
  * Paste this whole file into the map's data Google Sheet:
- *   Extensions → Apps Script → replace Code.gs → Save.
- * Then reload the sheet and run  <map name> → Set up sheet + forms  once.
+ *   Extensions → Apps Script → replace Code.gs → Save. (Easiest: copy <your map's address>/apps-script.txt, which is
+ *   this file and Confirm.gs together, always the version your site was built with.)
+ * Then reload the sheet and run  <map name> → Set up sheet + forms  once. It asks for your map's web address (to read
+ * its name and state from map.config.ts) and your core team's emails; nothing in this file needs editing.
  *
  * What it does
  *  - Loads the current map data from GitHub into the tabs (only if they're empty).
@@ -24,18 +26,120 @@
 
 // ---------------------------------------------------------------- settings
 /**
- * The region this copy of the map covers. A new map (say Wisconsin) changes only this block
- * and the site's src/region.config.ts. See guide.html → "Start a map for your region".
+ * The region this copy of the map covers. It is read from the map's own website (map.config.ts in the repo → the
+ * site's region.json), so a new map never edits this file and updates can be pasted over it as they are.
+ * "Set up sheet + forms" asks for the website once; "Connect to the map's website" reads it again (after renaming
+ * the map, say). Until then these defaults are used.
  */
-var REGION = {
-  title: 'MA Climate Organization Map',      // the map's name: form titles, emails, the sheet menu
-  stateName: 'Massachusetts',                // added to event/project locations before looking up a pin
-  stateCode: 'MA',
-  bounds: { south: 41.18, north: 42.89, west: -73.51, east: -69.85 }, // a pin outside this box is a wrong match
-  center: { lat: 42.3601, lng: -71.0589 },  // where a group with no address yet is placed (the site's REGION.fallback)
-  exampleTowns: 'Worcester, Cape Cod, Greater Boston, statewide',     // hint on the org form's town question
-  exampleOrgs: ['Sunrise Boston — monthly', 'Mass Power Forward — a few times a year'], // hint on "who do you work with"
+/** Which build of this script is running: vite.config.ts writes it into <site>/apps-script.txt, so setup.html can tell
+ *  when the sheet's copy is older than the site's ('dev' = pasted from the repo). */
+var SCRIPT_HASH = 'dev';
+var DEFAULT_REGION = {
+  title: 'Climate Organization Map',         // the map's name: form titles, emails, the sheet menu
+  stateName: '',                             // added to event/project locations before looking up a pin
+  stateCode: '',
+  bounds: { south: -90, north: 90, west: -180, east: 180 }, // a pin outside this box is a wrong match
+  center: { lat: 39.83, lng: -98.58 },      // where a group with no address yet is placed (the site's REGION.fallback)
+  exampleTowns: 'a town or region, statewide',                     // hint on the org form's town question
+  exampleOrgs: ['Sunrise Movement — monthly', 'Sierra Club — a few times a year'], // hint on "who do you work with"
 };
+var REGION = loadRegion_();
+/** DEFAULT_REGION with the website's settings (saved by connectSite_) on top. */
+function loadRegion_() {
+  var r = {};
+  Object.keys(DEFAULT_REGION).forEach(function (k) { r[k] = DEFAULT_REGION[k]; });
+  try {
+    var raw = PropertiesService.getScriptProperties().getProperty('REGION_JSON');
+    var saved = raw ? JSON.parse(raw) : {};
+    Object.keys(saved).forEach(function (k) { if (saved[k] !== '' && saved[k] !== null && saved[k] !== undefined) r[k] = saved[k]; });
+  } catch (e) { /* no saved region yet */ }
+  return r;
+}
+/** The map's web address, ending in "/" (script property SITE_URL), or '' before setup. */
+function siteUrl_() {
+  var u = '';
+  try { u = PropertiesService.getScriptProperties().getProperty('SITE_URL') || ''; } catch (e) { /* tests */ }
+  u = String(u).trim();
+  if (!u) return '';
+  if (!/^https?:\/\//i.test(u)) u = 'https://' + u;
+  return u.replace(/[?#].*$/, '').replace(/\/*$/, '/');
+}
+/** Reads <site>/region.json and saves it as this sheet's region. Returns an error message, or '' when it worked. */
+function connectSite_(url) {
+  var props = PropertiesService.getScriptProperties();
+  var prev = props.getProperty('SITE_URL');
+  if (url !== undefined) props.setProperty('SITE_URL', url);
+  var base = siteUrl_();
+  if (!base) return 'No web address given.';
+  var region;
+  try {
+    var res = UrlFetchApp.fetch(base + 'region.json', { muteHttpExceptions: true, followRedirects: true });
+    if (res.getResponseCode() !== 200) throw new Error('HTTP ' + res.getResponseCode());
+    region = JSON.parse(res.getContentText());
+    if (!region || !region.title) throw new Error('no title in it');
+  } catch (e) {
+    if (url !== undefined) { if (prev) props.setProperty('SITE_URL', prev); else props.deleteProperty('SITE_URL'); }
+    return 'Could not read ' + base + 'region.json (' + e.message + '). Is the site published yet? Open that address in a browser: ' +
+      'it should show your map. (GitHub → your repo → Actions → "Deploy to GitHub Pages" must have a green check.)';
+  }
+  props.setProperty('REGION_JSON', JSON.stringify({
+    title: region.title, stateName: region.stateName, stateCode: region.stateCode, bounds: region.bounds,
+    center: region.center, exampleTowns: region.exampleTowns, exampleOrgs: region.exampleOrgs,
+  }));
+  REGION = loadRegion_();
+  return '';
+}
+/** Asks for the map's web address when the sheet doesn't have it yet. false = cancelled or not reachable. */
+function ensureSite_(ui) {
+  if (siteUrl_()) {
+    var err = connectSite_(); // read it again: the name or state may have changed
+    if (!err || PropertiesService.getScriptProperties().getProperty('REGION_JSON')) return true; // offline: keep the saved one
+    ui.alert(err);
+    return false;
+  }
+  for (;;) {
+    var res = ui.prompt('Your map\'s web address',
+      'Paste your map\'s address, e.g. https://yourname.github.io/your-repo/\n' +
+      '(On GitHub: your repo → Settings → Pages shows it.) The sheet reads your map\'s name and state from it.',
+      ui.ButtonSet.OK_CANCEL);
+    if (res.getSelectedButton() !== ui.Button.OK) return false;
+    var err2 = connectSite_(res.getResponseText());
+    if (!err2) return true;
+    ui.alert(err2);
+  }
+}
+/** Asks for the core team's emails when ADMIN_EMAILS isn't set yet (kept as a script property, never in the code). */
+function ensureAdmins_(ui) {
+  var props = PropertiesService.getScriptProperties();
+  if (adminEmails_().length) return true;
+  var me = '';
+  try { me = Session.getEffectiveUser().getEmail() || ''; } catch (e) { /* not available */ }
+  var res = ui.prompt('Core team emails',
+    'Who can edit everything, approve changes and get alerts? Emails separated by commas.' +
+    (me ? '\nLeave it blank to use just yours (' + me + ').' : '') +
+    '\nYou can change this later: Extensions → Apps Script → Project settings → Script properties → ADMIN_EMAILS.',
+    ui.ButtonSet.OK_CANCEL);
+  if (res.getSelectedButton() !== ui.Button.OK) return false;
+  var list = String(res.getResponseText() || '').split(/[,;\s]+/).filter(function (e) { return /@/.test(e); });
+  if (!list.length && me) list = [me];
+  if (!list.length) { ui.alert('Please give at least one email.'); return false; }
+  props.setProperty('ADMIN_EMAILS', list.join(', '));
+  return true;
+}
+/** Menu: read the map's name and state from its website again (or point the sheet at a new address). */
+function connectToSite() {
+  var ui = SpreadsheetApp.getUi();
+  var cur = siteUrl_();
+  var res = ui.prompt('Connect to the map\'s website',
+    (cur ? 'Now connected to ' + cur + '\nLeave blank to read it again, or paste a new address.' : 'Paste your map\'s address, e.g. https://yourname.github.io/your-repo/'),
+    ui.ButtonSet.OK_CANCEL);
+  if (res.getSelectedButton() !== ui.Button.OK) return;
+  var typed = String(res.getResponseText() || '').trim();
+  var err = connectSite_(typed || undefined);
+  if (err) { ui.alert(err); return; }
+  updateForms();
+  ui.alert('Connected: ' + REGION.title + (REGION.stateName ? ' (' + REGION.stateName + ')' : '') + '.\n\nReload the sheet to see the new menu name.');
+}
 /**
  * Core team: can edit everything, approve reviews, and get alerts. Kept out of the code (so a public copy has no
  * personal emails): set the script property ADMIN_EMAILS (Project settings → Script properties), comma-separated.
@@ -57,12 +161,17 @@ function alertEmails_() {
   return out;
 }
 /**
- * Where the starting data comes from (the repo's public/data.json). Leave it '' to start a new map empty:
- * Set up then makes the tabs with headers only, and you add groups through the forms or by typing into the tabs.
+ * Where the starting data comes from: the site's own public/data.json (the nightly backup of this sheet). A new map's
+ * is empty, so Set up makes the tabs with headers only; a sheet rebuilt after an accident gets the last backup.
  */
-var SEED_URL = 'https://raw.githubusercontent.com/nkessel/openthink_mycc/development_branch/public/data.json';
-/** Where "Replace projects, events and actions from the repo" reads from (the repo's public/data.json). */
+var SEED_URL = siteUrl_() ? siteUrl_() + 'data.json' : '';
+/** Where "Replace projects, events and actions from the repo" reads from (the site's data.json). */
 var ACTIVITY_URL = SEED_URL;
+/**
+ * Menu items that only work with the original MA map's research files on GitHub (source check, Wikipedia topics,
+ * reviewed connections, the social justice spreadsheet). Other maps don't see them.
+ */
+var MA_RESEARCH = REGION.stateCode === 'MA';
 /** Email the admins when something needs review. */
 var ALERT_ADMINS = true;
 
@@ -234,7 +343,7 @@ var COLS = {
   'Change Log': ['timestamp', 'email', 'form', 'status', 'flag', 'record_type', 'record_id', 'record_name', 'changes'],
 };
 
-var START_TEXT = [
+function startText_() { return [
   [REGION.title + ' data', ''],
   ['', ''],
   ['This spreadsheet is the source of truth for the ' + REGION.title + '. The forms write into it; the site reads from it.', ''],
@@ -254,28 +363,29 @@ var START_TEXT = [
   ['Private info', 'Editors, Needs Review, Feedback and Change Log hold emails. They are never published.'],
   ['', ''],
   ['Form links', ''],
-];
+]; }
 
 // ---------------------------------------------------------------- menu
 function onOpen() {
-  SpreadsheetApp.getUi()
+  var menu = SpreadsheetApp.getUi()
     .createMenu(REGION.title)
     .addItem('Set up sheet + forms (run once)', 'setUp')
+    .addItem('Connect to the map\'s website (name, state)', 'connectToSite')
     .addItem('Replace projects, events and actions from the repo', 'replaceActivityFromRepo')
     .addItem('Refresh form dropdowns', 'refreshDropdowns')
     .addItem('Switch forms to typed answers (orgs + topics)', 'typeAnswersOnForms')
     .addItem('Show form + data links', 'showLinks')
-    .addItem('Fill in missing details (logos, websites, descriptions) from GitHub', 'fillLogosFromGitHub')
-    .addItem('Use Wikipedia-based topics on the forms (Turibius)', 'useWikiTopicsOnForms')
-    .addItem('Go back to group-based topics on the forms', 'useGroupTopicsOnForms')
-    .addItem('Add reviewed aliases from Unmatched Input (monthly topic review)', 'addReviewedAliases')
-    .addItem('Add connections from the Organization Info Form (reviewed list on GitHub)', 'importReviewedConnections')
-    .addItem('Update the forms (feedback areas, mission statement, next-step links)', 'updateForms')
+    .addItem('Fill in missing details (logos, websites, descriptions) from GitHub', 'fillLogosFromGitHub');
+  if (MA_RESEARCH) menu.addItem('Use Wikipedia-based topics on the forms (Turibius)', 'useWikiTopicsOnForms')
+    .addItem('Go back to group-based topics on the forms', 'useGroupTopicsOnForms');
+  menu.addItem('Add reviewed aliases from Unmatched Input (monthly topic review)', 'addReviewedAliases');
+  if (MA_RESEARCH) menu.addItem('Add connections from the Organization Info Form (reviewed list on GitHub)', 'importReviewedConnections');
+  menu.addItem('Update the forms (feedback areas, mission statement, next-step links)', 'updateForms')
     .addItem('Make key questions required (online?, free food, who can come, help wanted)', 'requireKeyQuestions')
-    .addItem('Re-check event and project pins (wrong town or outside ' + REGION.stateName + ')', 'fixPinsOutsideMa')
-    .addItem('Apply the source check (hide events, projects and actions with no page that names them)', 'applySourceCheck')
-    .addItem('Link the social justice spreadsheet', 'linkSocialJusticeSheet')
-    .addItem('Make confirmation links (one private link per group)', 'makeConfirmationLinks')
+    .addItem('Re-check event and project pins (wrong town' + (REGION.stateName ? ' or outside ' + REGION.stateName : '') + ')', 'fixPinsOutsideMa');
+  if (MA_RESEARCH) menu.addItem('Apply the source check (hide events, projects and actions with no page that names them)', 'applySourceCheck')
+    .addItem('Link the social justice spreadsheet', 'linkSocialJusticeSheet');
+  menu.addItem('Make confirmation links (one private link per group)', 'makeConfirmationLinks')
     .addToUi();
 }
 
@@ -578,6 +688,7 @@ function updateForms() {
   run('FORM_EVENT', upgradeEventForm_);
   run('FORM_PROJECT', upgradeProjectForm_);
   orgNextSteps_();
+  try { cacheSiteForms_(); } catch (e) { /* the site keeps the forms it had */ }
   ss_().toast('Forms updated.');
 }
 
@@ -606,6 +717,7 @@ function requireKeyQuestions() {
       if (typed && typed.setRequired) { typed.setRequired(true); done.push(it.getTitle()); }
     });
   });
+  try { cacheSiteForms_(); } catch (e) { /* the site keeps the forms it had */ }
   ss_().toast(done.length ? 'Required now: ' + uniq_(done).join('; ') : 'No matching questions found.');
 }
 
@@ -749,6 +861,9 @@ function fillLogos_(data) {
 /** One-time setup: create tabs, load the current map data, build + share the forms. */
 function setUp() {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var ui = SpreadsheetApp.getUi();
+  if (!ensureSite_(ui) || !ensureAdmins_(ui)) return; // the map's address (name, state) and the core team, asked once
+  SEED_URL = ACTIVITY_URL = siteUrl_() + 'data.json';
   PropertiesService.getScriptProperties().setProperty('SHEET_ID', ss.getId());
   var loaded = seedSheet_(ss);
   ensureTrigger_('onReviewEdit', function () { ScriptApp.newTrigger('onReviewEdit').forSpreadsheet(ss).onEdit().create(); });
@@ -812,7 +927,8 @@ function seedSheet_(ss) {
   var start = ss.getSheetByName(TAB.start);
   if (!start) {
     start = ss.getSheets()[0].getLastRow() === 0 ? ss.getSheets()[0].setName(TAB.start) : ss.insertSheet(TAB.start, 0);
-    start.getRange(1, 1, START_TEXT.length, 2).setValues(START_TEXT);
+    var text = startText_();
+    start.getRange(1, 1, text.length, 2).setValues(text);
     start.getRange('A1').setFontSize(16).setFontWeight('bold');
     ['Tabs', 'Rules', 'Form links'].forEach(function (t) { start.getRange(findRow_(start, t), 1).setFontWeight('bold'); });
     start.setColumnWidth(1, 380); start.setColumnWidth(2, 700);
@@ -952,11 +1068,16 @@ function buildForms(dataLoaded) {
   refreshDropdowns();
   orgNextSteps_();
   writeLinks_();
+  var deployed = '';
+  try { deployed = ScriptApp.getService().getUrl() || ''; } catch (e) { /* not deployed yet */ }
   SpreadsheetApp.getUi().alert(
     (dataLoaded === true ? 'Loaded the current map data into the tabs.\n\n' : '') +
     (built.length
       ? 'Built and shared with the core team:\n• ' + built.join('\n• ') + '\n\nLinks are on the Start Here tab.'
-      : 'All the forms already exist. Links are on the Start Here tab.')
+      : 'All the forms already exist. Links are on the Start Here tab.') +
+    (deployed ? '' : '\n\nNext: Extensions → Apps Script → Deploy → New deployment → ⚙ Web app. Execute as: Me. ' +
+      'Who has access: Anyone. Deploy, copy the web app URL, and paste it into map.config.ts (dataUrl) on GitHub. ' +
+      'The site then picks up these forms by itself.')
   );
 }
 
@@ -1255,6 +1376,7 @@ function typeAnswersOnForms() {
     }
   });
   seedTopics_();
+  try { cacheSiteForms_(); } catch (e) { /* the site keeps the forms it had */ }
   SpreadsheetApp.getUi().alert('Done: ' + swapped + ' question(s) changed. The forms now take typed organizations and topics; anything that does not match is saved on the "' + TAB.unmatched + '" tab.');
 }
 /** Put the built-in topics on the Topics tab if it is empty (the team pastes the full list there). */
@@ -1354,7 +1476,7 @@ function buildProjectForm_(form) {
 /** Older feedback forms had a fixed "Other" choice; make it a write-in (safe to run again). */
 function upgradeFeedbackForm_(form) {
   collectVerifiedEmail_(form);
-  form.setDescription(FEEDBACK_DESC);
+  form.setDescription(feedbackDesc_());
   /** @type {GoogleAppsScript.Forms.Item | null} */ var nameItem = null;
   var hasPhone = false;
   form.getItems().forEach(function (it) {
@@ -1373,11 +1495,13 @@ function upgradeFeedbackForm_(form) {
     if (after) form.moveItem(phone.getIndex(), after.getIndex() + 1);
   }
 }
-var FEEDBACK_DESC = 'Tell us what is working, what is broken, or what you wish the ' + REGION.title + ' did. ' +
+function feedbackDesc_() { return FEEDBACK_DESC_HEAD + REGION.title + FEEDBACK_DESC_TAIL; }
+var FEEDBACK_DESC_HEAD = 'Tell us what is working, what is broken, or what you wish the ';
+var FEEDBACK_DESC_TAIL = ' did. ' +
   "You'll be asked to sign in with Google so we can follow up; only your feedback is required.";
 
 function buildFeedbackForm_(form) {
-  form.setDescription(FEEDBACK_DESC);
+  form.setDescription(feedbackDesc_());
   form.setConfirmationMessage('Thank you — we read every one.');
   form.addMultipleChoiceItem().setTitle(Q.fbType).setChoiceValues(FEEDBACK_TYPES).showOtherOption(true);
   form.addCheckboxItem().setTitle(Q.fbArea).setChoiceValues(FEEDBACK_AREAS);
@@ -1436,6 +1560,7 @@ function refreshDropdowns() {
   ['FORM_ORG', 'FORM_EVENT', 'FORM_PROJECT'].forEach(function (k) { set(k, Q.tags, tags); });
   set('FORM_PROJECT', Q.skills, skills);
   set('FORM_ACTION', Q.skills, skills);
+  try { cacheSiteForms_(); } catch (e) { /* the site keeps the forms it had */ }
 }
 
 /**
@@ -2359,6 +2484,10 @@ function doGet(e) {
   }
   // The social justice groups live in their own spreadsheet and are only fetched when someone switches them on.
   var data = p.feed === 'social-justice' ? socialJusticeData_() : buildDataFile_(readAll_(), nowIso_());
+  if (p.feed !== 'social-justice') {
+    try { var forms = siteForms_(); if (forms) data.forms = forms; } catch (err) { /* the map still works; its + button says the forms aren't connected */ }
+  }
+  data.script_hash = SCRIPT_HASH;
   return ContentService.createTextOutput(JSON.stringify(data)).setMimeType(ContentService.MimeType.JSON);
 }
 
@@ -2564,7 +2693,7 @@ function writeLinks_() {
     return [r[0], link + '    (edit: ' + f.getEditUrl() + ')'];
   });
   rows.push(['', '']);
-  rows.push(['For the site: paste into src/forms.config.ts', JSON.stringify(siteFormConfig_())]);
+  rows.push(['For the site (it reads these by itself through the web app; nothing to copy)', JSON.stringify(siteFormConfig_())]);
   sheet.getRange(start + 1, 1, rows.length, 2).setValues(rows);
 }
 
@@ -2611,6 +2740,148 @@ function siteFormConfig_() {
   };
 }
 
+// ---------------------------------------------------------------- the forms, for the site
+/**
+ * The site reads the forms' links and every question's "entry.N" id, type and choices from the web app (doGet →
+ * data.forms), so a new map never copies them into the code (this replaces scripts/form-fields.mjs and pasting
+ * into src/forms.config.ts). Worked out when the forms change (Set up, Update the forms, Refresh form dropdowns)
+ * and saved in script properties, so the web app stays fast.
+ */
+var SITE_FORMS_PROP = 'SITE_FORMS';
+var FORM_KEYS_ = { org: 'FORM_ORG', event: 'FORM_EVENT', project: 'FORM_PROJECT', action: 'FORM_ACTION' };
+
+/** The type numbers the site uses (the same as the public form page's own: 0 text, 1 paragraph, 2 multiple choice, 3 dropdown, 4 checkboxes, 5 scale, 9 date, 10 time). */
+function siteType_(t) {
+  var T = FormApp.ItemType;
+  if (t === T.TEXT) return 0;
+  if (t === T.PARAGRAPH_TEXT) return 1;
+  if (t === T.MULTIPLE_CHOICE) return 2;
+  if (t === T.LIST) return 3;
+  if (t === T.CHECKBOX) return 4;
+  if (t === T.SCALE) return 5;
+  if (t === T.DATE) return 9;
+  if (t === T.TIME) return 10;
+  return -1; // headers, page breaks, images, grids: not filled in from the site
+}
+function choicesOf_(it, type) {
+  if (type === 2) return it.asMultipleChoiceItem().getChoices().map(function (c) { return c.getValue(); });
+  if (type === 3) return it.asListItem().getChoices().map(function (c) { return c.getValue(); });
+  if (type === 4) return it.asCheckboxItem().getChoices().map(function (c) { return c.getValue(); });
+  return [];
+}
+/** An answer for one question, so a pre-filled link shows its entry id. `avoid` = values already used in the batch. */
+function sampleResponse_(it, type, value, avoid) {
+  if (type === 0) return { r: it.asTextItem().createResponse(value), v: value };
+  if (type === 1) return { r: it.asParagraphTextItem().createResponse(value), v: value };
+  if (type === 2 || type === 3 || type === 4) {
+    var cs = choicesOf_(it, type).filter(function (c) { return !avoid || !avoid[c]; });
+    if (!cs.length) return null;
+    if (type === 2) return { r: it.asMultipleChoiceItem().createResponse(cs[0]), v: cs[0] };
+    if (type === 3) return { r: it.asListItem().createResponse(cs[0]), v: cs[0] };
+    return { r: it.asCheckboxItem().createResponse([cs[0]]), v: cs[0] };
+  }
+  if (type === 5) { var sc = it.asScaleItem(); return { r: sc.createResponse(sc.getLowerBound()), v: null }; }
+  if (type === 9) return { r: it.asDateItem().createResponse(new Date(2000, 0, 1, 12)), v: null };
+  if (type === 10) return { r: it.asTimeItem().createResponse(10, 0), v: null };
+  return null;
+}
+/** "entry.N" → value pairs in a pre-filled link, in order. */
+function prefilledPairs_(url) {
+  var q = String(url).split('?')[1] || '';
+  return q.split('&').map(function (kv) {
+    var i = kv.indexOf('=');
+    if (i < 0) return null;
+    var k = kv.slice(0, i), v = kv.slice(i + 1);
+    try { v = decodeURIComponent(v.replace(/\+/g, ' ')); } catch (e) { /* keep it encoded */ }
+    return /^entry\.\d+$/.test(k) ? [k, v] : null;
+  }).filter(Boolean);
+}
+/**
+ * One form's questions → { title: { entry, type, choices } } (like the public form page lists them). Question ids
+ * already known (`known`, same title and type) are kept; the rest are found with one pre-filled link for the whole
+ * form (each answer made unique so it can be matched back), and one link per question for what that couldn't match.
+ */
+function formFields_(form, known) {
+  known = known || {};
+  var out = {}, need = [];
+  var batch = form.createResponse(), used = {}, inBatch = 0;
+  form.getItems().forEach(function (it, i) {
+    var type = siteType_(it.getType());
+    var title = it.getTitle();
+    if (type < 0 || !title || out[title]) return;
+    var choices = choicesOf_(it, type);
+    if (/^Which /.test(title)) choices = choices.slice(0, 1); // only "➕ Add a new …" is needed
+    var f = { entry: '', type: type };
+    if (choices.length) f.choices = choices;
+    out[title] = f;
+    if (known[title] && known[title].entry && known[title].type === type) { f.entry = known[title].entry; return; }
+    var sample = null;
+    try { sample = (type === 0 || type === 1) ? sampleResponse_(it, type, 'q' + i + 'x') : (type <= 4 ? sampleResponse_(it, type, '', used) : null); } catch (e) { sample = null; }
+    if (sample && sample.v !== null) {
+      batch.withItemResponse(sample.r);
+      used[sample.v] = title;
+      inBatch++;
+    }
+    need.push({ it: it, type: type, title: title });
+  });
+  if (inBatch) {
+    try {
+      prefilledPairs_(batch.toPrefilledUrl()).forEach(function (kv) {
+        var title = used[kv[1]];
+        if (title && out[title] && !out[title].entry) out[title].entry = kv[0];
+      });
+    } catch (e) { /* fall back to one link per question below */ }
+  }
+  need.forEach(function (n) {
+    if (out[n.title].entry) return;
+    try {
+      var one = sampleResponse_(n.it, n.type, 'x');
+      if (!one) return;
+      var pairs = prefilledPairs_(form.createResponse().withItemResponse(one.r).toPrefilledUrl());
+      if (pairs.length) out[n.title].entry = pairs[0][0];
+    } catch (e) { /* leave it out: the site just won't pre-fill this question */ }
+  });
+  Object.keys(out).forEach(function (t) { if (!out[t].entry) delete out[t]; });
+  return out;
+}
+/** Script properties hold at most 9 kB each, so long values are split. */
+function setLongProp_(key, value) {
+  var props = PropertiesService.getScriptProperties();
+  var n = Math.ceil(value.length / 3000) || 1;
+  var old = Number(props.getProperty(key + '_N') || 0);
+  for (var i = 0; i < n; i++) props.setProperty(key + '_' + i, value.slice(i * 3000, (i + 1) * 3000));
+  for (var j = n; j < old; j++) props.deleteProperty(key + '_' + j);
+  props.setProperty(key + '_N', String(n));
+}
+function getLongProp_(key) {
+  var props = PropertiesService.getScriptProperties();
+  var n = Number(props.getProperty(key + '_N') || 0);
+  var parts = [];
+  for (var i = 0; i < n; i++) parts.push(props.getProperty(key + '_' + i) || '');
+  return parts.join('');
+}
+/** Works out the forms for the site again and saves them. Returns them, or null when no forms are built yet. */
+function cacheSiteForms_() {
+  var props = PropertiesService.getScriptProperties();
+  var prev = {};
+  try { prev = JSON.parse(getLongProp_(SITE_FORMS_PROP) || '{}').fields || {}; } catch (e) { prev = {}; }
+  var fields = {};
+  Object.keys(FORM_KEYS_).forEach(function (k) {
+    var id = props.getProperty(FORM_KEYS_[k]);
+    if (id && formExists_(id)) fields[k] = formFields_(FormApp.openById(id), prev[k]);
+  });
+  if (!Object.keys(fields).length) return null;
+  var forms = { links: siteFormConfig_(), fields: fields, updated_at: nowIso_() };
+  setLongProp_(SITE_FORMS_PROP, JSON.stringify(forms));
+  return forms;
+}
+/** The saved forms for the web app (worked out once if they never were). */
+function siteForms_() {
+  var raw = getLongProp_(SITE_FORMS_PROP);
+  if (raw) { try { return JSON.parse(raw); } catch (e) { /* rebuild below */ } }
+  return cacheSiteForms_();
+}
+
 function showLinks() {
   writeLinks_();
   var url = '';
@@ -2625,7 +2896,8 @@ function findRow_(sheet, text) {
   return 0;
 }
 
-var VAGUE_PLACE = /^(statewide|national|nationwide|new england|northeast|online|remote|zoom|virtual|massachusetts|ma)$/i;
+var VAGUE_PLACE = new RegExp('^(statewide|national|nationwide|new england|northeast|online|remote|zoom|virtual|massachusetts|ma' +
+  [REGION.stateName, REGION.stateCode].filter(Boolean).map(function (x) { return '|' + String(x).replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }).join('') + ')$', 'i');
 
 /** Drop the parts of a location a map can't use: "2nd floor", "Room 104", "Suite B", "basement", "lobby". */
 function cleanPlace_(place) {
@@ -2662,7 +2934,7 @@ function geocodeQueries_(place, hint) {
   place = cleanPlace_(place);
   if (!place || VAGUE_PLACE.test(place)) return [];
   var stateRe = new RegExp('\\b(' + REGION.stateCode + '|' + REGION.stateName + ')\\b', 'i');
-  var withMa = function (s) { return stateRe.test(s) ? s : s + ', ' + REGION.stateName; };
+  var withMa = function (s) { return !REGION.stateName || stateRe.test(s) ? s : s + ', ' + REGION.stateName; };
   var qs = [];
   var hasTown = /,/.test(place) || /\b\d{5}\b/.test(place);
   if (hint && !hasTown) qs.push(withMa(place + ', ' + hint));

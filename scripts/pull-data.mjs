@@ -1,16 +1,26 @@
-// Pull the latest map data from the MA Climate Coalition Map Google Sheet into public/data.json.
+// Pull the latest map data from the map's Google Sheet into public/data.json (the nightly backup).
 //
+//   npm run pull-data          uses dataUrl from map.config.ts
 //   OPENTHINK_DATA_URL="https://script.google.com/macros/s/…/exec" npm run pull-data
 //
 // The URL is the Apps Script web app from apps-script/Code.gs (Deploy → Web app).
 // It only serves the public tabs — never Feedback or Change Log.
-import { writeFileSync } from "node:fs";
+import { readFileSync, writeFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 
-const url = process.env.OPENTHINK_DATA_URL || process.argv[2];
+/** dataUrl from map.config.ts (read as text, so this needs no TypeScript tooling). */
+function configUrl() {
+  try {
+    const cfg = readFileSync(fileURLToPath(new URL("../map.config.ts", import.meta.url)), "utf8");
+    return /^\s*dataUrl:\s*["'`]([^"'`]*)["'`]/m.exec(cfg)?.[1]?.trim() || "";
+  } catch {
+    return "";
+  }
+}
+const url = process.env.OPENTHINK_DATA_URL || process.argv[2] || configUrl();
 if (!url) {
-  console.error("Set OPENTHINK_DATA_URL (or pass the web app URL as an argument).");
-  process.exit(1);
+  console.log("No web app URL yet (map.config.ts → dataUrl is empty), so there is nothing to back up.");
+  process.exit(0);
 }
 
 const res = await fetch(url, { redirect: "follow" });
