@@ -2871,9 +2871,25 @@ function cacheSiteForms_() {
     if (id && formExists_(id)) fields[k] = formFields_(FormApp.openById(id), prev[k]);
   });
   if (!Object.keys(fields).length) return null;
-  var forms = { links: siteFormConfig_(), fields: fields, updated_at: nowIso_() };
+  var forms = { links: siteLinks_(fields), fields: fields, updated_at: nowIso_() };
   setLongProp_(SITE_FORMS_PROP, JSON.stringify(forms));
   return forms;
+}
+/** The same as siteFormConfig_(), but taking the question ids from `fields` (no pre-filled links needed). */
+function siteLinks_(fields) {
+  var props = PropertiesService.getScriptProperties();
+  var e = function (k, title) { return fields[k] && fields[k][title] ? fields[k][title].entry : ''; };
+  var which = { event: Q.whichEvent, project: Q.whichProject, action: Q.whichAction };
+  var out = {};
+  ['org', 'event', 'project', 'action', 'feedback'].forEach(function (k) {
+    var id = props.getProperty(k === 'feedback' ? 'FORM_FEEDBACK' : FORM_KEYS_[k]);
+    if (!id || !formExists_(id)) { out[k] = { url: '' }; return; }
+    var link = { url: FormApp.openById(id).getPublishedUrl() };
+    if (k === 'org') link.orgEntry = e(k, Q.whichOrg);
+    else if (k !== 'feedback') { link.hostOrgEntry = e(k, Q.hostOrg); link.coalitionEntry = e(k, Q.coalition); link.itemEntry = e(k, which[k]); }
+    out[k] = link;
+  });
+  return out;
 }
 /** The saved forms for the web app (worked out once if they never were). */
 function siteForms_() {
