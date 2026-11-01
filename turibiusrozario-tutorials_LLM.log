@@ -1,3 +1,11 @@
+2026-11-01  After the first test run (16 min): clearer setup steps and a data leak fix.
+  Why: the tester asked where each button is, to commit straight to main, how to reach setup.html, to tick Select all
+  on Google's permission screen, not to touch the sheet while setup runs, about the gear in the deploy dialog, and how
+  long each wait is. The Topics page also showed MA groups on a fresh map.
+  What: step-by-step README + setup.html with button locations, waits and simplified drawings; an "Open the setup
+  checklist" note on maps without dataUrl; deploy summary links; MA research records/bills and source-check emptied.
+  Checked: build, all Apps Script tests, Topics page empty on a fresh build, setup.html and every drawing rendered.
+
 2026-10-31  Created the forkable template from nkessel/openthink_mycc development_branch (8448878).
   Why: a new map took about an hour of hand edits (Code.gs REGION, index.html, region/data/forms config, form-fields
   script, repository variable, environment rule). Goal: under 15 minutes, browser only, with updates via Sync fork.
