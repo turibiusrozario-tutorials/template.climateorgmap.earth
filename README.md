@@ -10,35 +10,107 @@ that the sheet builds for you. **You edit one file, [`map.config.ts`](map.config
 
 ## Start your own map (about 15 minutes)
 
-You need a GitHub account and a Google account (ideally a shared team account: see [Who owns what](#who-owns-what)).
-Everything happens in the browser.
+You need a GitHub account (not the one that owns this template: nobody can fork their own repo) and a Google account
+that should own the map's sheet (ideally a shared team account: see [Who owns what](#who-owns-what)). Everything happens
+in the browser. The drawings below are simplified; the numbered circles are the order to click in.
 
-**On GitHub (5 minutes)**
+**Waiting:** about 5 minutes of the 15, at these points (⏳ in the steps):
 
-1. On this repo's page, click **Fork**. Give it a name (e.g. `wi-climate-map`) and click **Create fork**.
-2. In your fork: **Actions** tab → **I understand my workflows, go ahead and enable them**.
-3. **Settings → Pages → Build and deployment → Source: GitHub Actions**.
-4. Open [`map.config.ts`](map.config.ts) → pencil icon (**Edit**). Set `title` (e.g. `"WI Climate Organization Map"`),
-   `state` (e.g. `"WI"`) and your `landAcknowledgement`. **Commit changes**.
-5. **Actions** tab: wait for **Deploy to GitHub Pages** to get a green check (about 2 minutes). Your map is at
-   `https://<your-github-name>.github.io/<repo-name>/`. Open **`…/setup.html`** there: it checks every step from here on.
+| Wait | When | How long | How you know it's done |
+|---|---|---|---|
+| Site build | after steps 4 and 10 | about 2 minutes each | **Actions** tab: yellow dot = running, green ✓ = done |
+| Your map's menu | step 8, after reloading the sheet | 5–10 seconds | a **Climate Organization Map** menu appears after **Help** |
+| Setup script | step 8 | 1–3 minutes | a popup "Built and shared with the core team…" |
+| A form submission | step 11 | about 1 minute | it shows on the map after a reload |
 
-**In Google (8 minutes)**
+### On GitHub (about 4 minutes)
 
-6. Open [sheets.new](https://sheets.new) and name the sheet (e.g. "WI Climate Organization Map data").
-7. On your `setup.html` page, click **Copy the sheet script**. In the sheet: **Extensions → Apps Script**, select all
-   in `Code.gs`, paste over it, **Save**.
-8. Reload the sheet. In the new **Climate Organization Map** menu (it takes your map's name after setup): **Set up
-   sheet + forms (run once)**. Allow the permissions
-   (Google may say the app isn't verified: **Advanced → Go to … (unsafe)**; it's your own script). If it stops after
-   asking for permission, click the menu item again. Paste your map's address when asked, and your core team's emails.
-9. In Apps Script: **Deploy → New deployment** → ⚙ **Web app**. Execute as **Me**, access **Anyone** → **Deploy** →
-   copy the **Web app URL**.
+1. **Fork.** On this repo's page, click **Fork** (top right, between Watch and Star). Name it (e.g. `wi-climate-map`),
+   leave **Copy the main branch only** ticked, click **Create fork**.
 
-**Back on GitHub (2 minutes)**
+   <img src="public/setup/fork.svg" width="620" alt="The Create a new fork page: 1 repository name, 2 Copy the main branch only stays ticked, 3 Create fork">
 
-10. Edit `map.config.ts` again: paste the URL into `dataUrl`. **Commit changes**. After the deploy (about 2 minutes),
-    every step on `setup.html` is green. Press **+** on your map to add your first group.
+2. **Turn on Actions.** In your fork, click the **Actions** tab (the bar under the repo name) → **I understand my
+   workflows, go ahead and enable them**.
+
+   <img src="public/setup/actions.svg" width="620" alt="The Actions tab of a fork: 1 Actions, 2 the green enable button">
+
+3. **Turn on Pages.** **Settings** (same bar, far right, gear icon) → **Pages** (left menu, under "Code and
+   automation") → **Source**: choose **GitHub Actions**. It saves by itself.
+
+   <img src="public/setup/pages.svg" width="620" alt="Settings, then Pages, then Source set to GitHub Actions">
+
+4. **Name your map.** Click the **Code** tab, then `map.config.ts` in the file list. Click the **pencil icon** at the top
+   right of the file ("Edit this file").
+
+   <img src="public/setup/edit.svg" width="620" alt="A file on GitHub: 1 the pencil icon at the top right edits it">
+
+   Change `title` (e.g. `"WI Climate Organization Map"`) and `state` (e.g. `"WI"`), and replace the line
+   `[Write your land acknowledgement here …]` with yours (keep the backticks around it). Then click **Commit changes…**
+   (green, top right), choose **Commit directly to the main branch**, and click **Commit changes**.
+
+   <img src="public/setup/commit.svg" width="620" alt="1 Commit changes, 2 Commit directly to the main branch, 3 Commit changes">
+
+   ⏳ Your site now builds (about 2 minutes). Don't wait: go on with step 5.
+
+### In Google (about 6 minutes)
+
+5. **Make the sheet.** Open [sheets.new](https://sheets.new) (a blank Google Sheet) and name it: click "Untitled
+   spreadsheet" at the top left, e.g. "WI Climate Organization Map data".
+6. **Open your map's setup checklist:** `https://<your-github-name>.github.io/<repo-name>/setup.html`. Or: **Settings →
+   Pages → Visit site** and click **Open the setup checklist** in the note on the map. (Not there yet? The build from
+   step 4 is still running: wait for the green ✓ on the **Actions** tab.) Keep this page open: it checks each step.
+
+   <img src="public/setup/site-live.svg" width="620" alt="Settings, Pages: Your site is live at ..., 1 Visit site">
+
+7. **Paste the sheet script.** On the checklist, click **Copy the sheet script**. In the sheet: **Extensions** (menu
+   bar) → **Apps Script**; it opens in a new tab.
+
+   <img src="public/setup/extensions.svg" width="620" alt="Google Sheets menu bar: 1 Extensions, 2 Apps Script">
+
+   Click inside the code, select all (Ctrl+A, Mac ⌘A), paste (Ctrl+V, Mac ⌘V), and click **Save** (the disk icon above
+   the code). Leave this tab open for step 9.
+
+   <img src="public/setup/editor.svg" width="620" alt="The Apps Script editor: 1 replace the code, 2 Save">
+
+8. **Set up the sheet.** Go back to the sheet's tab and **reload it** (the browser's reload button). ⏳ After 5–10
+   seconds a **Climate Organization Map** menu appears at the end of the menu bar. Click it → **Set up sheet + forms
+   (run once)**.
+
+   <img src="public/setup/menu.svg" width="620" alt="1 the Climate Organization Map menu after Help, 2 Set up sheet + forms">
+
+   Google asks for permission: **OK** → choose your account → "Google hasn't verified this app": **Advanced** → **Go
+   to Untitled project (unsafe)** → tick **Select all** → **Continue**. (It's your own script; "unverified" only means
+   Google hasn't reviewed it.) Tick **Select all**: without every permission, setup fails partway.
+
+   <img src="public/setup/permissions.svg" width="700" alt="1 OK, 2 Advanced, 3 Go to Untitled project (unsafe), 4 Select all, 5 Continue">
+
+   If nothing happens after **Continue**, click **Set up sheet + forms** again. It then asks two things: your map's
+   address (`https://<your-github-name>.github.io/<repo-name>/`, also shown at the top of the checklist) → **OK**; and
+   your core team's emails, separated by commas (blank = just you) → **OK**.
+
+   ⏳ **Then don't touch anything for 1–3 minutes.** The script works on its own: a "Running script" box shows at the
+   top, and tabs and forms appear one by one. It's done when a popup says "Built and shared with the core team…": click
+   **OK**.
+
+9. **Publish the sheet's data.** In the **Apps Script** tab: **Deploy** (blue, top right) → **New deployment** → click
+   the **gear** next to "Select type" → **Web app**. Set **Execute as: Me** and **Who has access: Anyone**, click
+   **Deploy**. If it shows **Authorize access**, click it and allow everything as in step 8 (OK, Advanced, Go to …,
+   Select all, Continue).
+
+   <img src="public/setup/deploy.svg" width="700" alt="1 Deploy, 2 New deployment, 3 the gear, 4 Web app, 5 Execute as Me, 6 Who has access Anyone, 7 Deploy">
+
+   Click **Copy** under **Web app URL** (it ends in `/exec`), then **Done**.
+
+   <img src="public/setup/deploy-url.svg" width="620" alt="Deployment successfully created: 1 Copy the web app URL">
+
+### Back on GitHub (about 1 minute)
+
+10. **Connect the map to the sheet.** Edit `map.config.ts` again (pencil, as in step 4): paste the URL between the
+    quotes of `dataUrl: ""`. **Commit changes…** → **Commit directly to the main branch** → **Commit changes**.
+    ⏳ After the build (about 2 minutes), reload the checklist: every step is green.
+11. **Try it.** Open your map, press **+**, and add your first group. ⏳ It shows on the map about a minute after you
+    submit (reload the map). Delete test rows in the sheet when you're done.
 
 That's it: approved form submissions show on the map within a minute, and a backup of the data is saved into the repo
 every night.

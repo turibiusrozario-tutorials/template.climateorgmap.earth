@@ -19,6 +19,7 @@ import { existsSync, rmSync } from "node:fs";
 export const OWN = [
   "map.config.ts", // the one settings file
   "public/data.json", "public/thoughts.json", "public/logos/", "src/logos.web.json", // the map's data and logos
+  "public/topics.json", "public/topics-wiki.json", "src/source-check.json", // research about the map's own groups
   "src/forms.config.ts", "src/forms.fields.json", "src/region.config.ts", "src/data.config.ts", // older copies keep settings here
   "public/maps/", "public/money/", "public/sectors/", "research/", "data-review/", // the MA map's research layers
   "README.md", "HANDOFF.md", "CLAUDE.md", "public/guide.html", // each copy's own notes and guide

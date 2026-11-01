@@ -7,6 +7,7 @@
 //
 // It keeps all the code, the topic lists and the geography files, and removes Massachusetts's data:
 //   - public/data.json becomes an empty map (no coalitions, groups or links)
+//   - public/topics*.json keep their topic lists but lose MA's research records and bills; src/source-check.json empties
 //   - Massachusetts logos, the researched Vermont/Oregon maps, the money layer, the social justice layers,
 //     research notes and the MA team's work log are deleted
 //   - map.config.ts: a blank settings file (name, state, land acknowledgement and web app URL to fill in)
@@ -28,6 +29,16 @@ const act = (what, fn) => {
 const EMPTY = { generated_at: new Date().toISOString(), coalitions: [], organizations: [], edges: [], org_links: [] };
 act("public/data.json → an empty map", () => writeFileSync("public/data.json", JSON.stringify(EMPTY, null, 1) + "\n"));
 act("public/thoughts.json → empty", () => writeFileSync("public/thoughts.json", "{}\n"));
+// The topic lists stay; the MA research records filed under them (and MA's bills) go, so the Topics page starts empty.
+for (const f of ["public/topics.json", "public/topics-wiki.json"]) {
+  if (!existsSync(f)) continue;
+  const t = JSON.parse(readFileSync(f, "utf8"));
+  if (!t.records?.length && !t.bills?.length) continue;
+  act(`${f}: keep the topic list, drop ${t.records?.length || 0} Massachusetts records and ${t.bills?.length || 0} bills`, () =>
+    writeFileSync(f, JSON.stringify({ ...t, records: [], bills: [] }, null, 1) + "\n"));
+}
+act("src/source-check.json → empty (the MA items' page check)", () =>
+  writeFileSync("src/source-check.json", JSON.stringify({ checked: "", remove: [], fix: {}, add: {}, groups: {} }, null, 1) + "\n"));
 
 if (existsSync("public/logos")) {
   const logos = readdirSync("public/logos");

@@ -32,7 +32,11 @@
   ol.steps { list-style: none; padding: 0; margin: 24px 0; counter-reset: s; }
   ol.steps > li { counter-increment: s; border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px 12px; margin: 0 0 14px; }
   ol.steps > li > h2 { font-size: 1.1em; margin: 0 0 6px; display: flex; gap: 10px; align-items: baseline; flex-wrap: wrap; }
-  ol.steps > li > h2::before { content: counter(s) "."; color: var(--dim); }
+  ol.steps > li > h2 .num { color: var(--dim); font-weight: 600; font-size: 0.85em; }
+  figure { margin: 10px 0 12px; }
+  .steps ul.sub { list-style: none; padding-left: 0; }
+  .steps ul.sub > li { margin: 10px 0; }
+  figure img { display: block; max-width: 100%; height: auto; border-radius: 8px; }
   .pill { font-size: 0.75em; font-weight: 600; padding: 2px 10px; border-radius: 999px; background: var(--code); color: var(--dim); white-space: nowrap; }
   .pill.ok { background: var(--accent-soft); color: var(--accent); }
   .pill.warn { background: var(--warn-soft); color: var(--warn); }
@@ -51,48 +55,59 @@
 <body>
 <header><div class="wrap">
   <h1 id="title">Set up your map</h1>
-  <p class="lead">A checklist that checks itself: each step turns green once it's done. Keep this page open while you set up. It is public but harmless (it shows nothing private).</p>
+  <p class="lead">A checklist that checks itself: each step turns green once it's done. The step numbers match the README. Keep this page open while you set up. It is public but harmless (it shows nothing private).</p>
 </div></header>
 <main class="wrap">
   <ol class="steps">
     <li id="s-site">
-      <h2>Your map's website <span class="pill ok">done</span></h2>
-      <p>You're looking at it. This is its address. The sheet asks for it in step 3.</p>
+      <h2><span class="num">Steps 1–3</span> Your map's website <span class="pill ok">done</span></h2>
+      <p>You're looking at it: the fork, Actions and Pages are set. This is your map's address; the sheet asks for it in step 8.</p>
       <div class="row"><code id="site-url"></code><button type="button" data-copy="site-url">Copy</button></div>
       <p class="status" id="version"></p>
     </li>
     <li id="s-config">
-      <h2>Name, state and land acknowledgement <span class="pill" id="p-config">checking…</span></h2>
-      <p>All three are in one file, <code>map.config.ts</code>. Edit it on GitHub (pencil icon → change → <b>Commit changes</b>). The site rebuilds in about a minute; reload this page.</p>
+      <h2><span class="num">Step 4</span> Name, state and land acknowledgement <span class="pill" id="p-config">checking…</span></h2>
+      <p>All three are in one file, <code>map.config.ts</code>: open it on GitHub, click the <b>pencil icon</b> at the top right of the file, change the values, then <b>Commit changes…</b> → <b>Commit directly to the main branch</b> → <b>Commit changes</b>. ⏳ The site rebuilds in about 2 minutes; reload this page.</p>
       <div class="row"><a class="btn" id="edit-config" target="_blank" rel="noopener">Edit map.config.ts on GitHub</a></div>
       <p class="status" id="config-status"></p>
     </li>
     <li id="s-sheet">
-      <h2>Google Sheet and forms <span class="pill" id="p-sheet">checking…</span></h2>
-      <ol>
-        <li>Open <a href="https://sheets.new" target="_blank" rel="noopener">sheets.new</a> (a blank Google Sheet). Name it, e.g. "<span class="map-title">your map</span> data".</li>
-        <li><b>Extensions → Apps Script</b>. Select everything in <code>Code.gs</code> and delete it, then paste the sheet script: <button type="button" id="copy-script">Copy the sheet script</button> <span class="status" id="script-status"></span></li>
-        <li>Click <b>Save</b> (💾). Go back to the sheet tab and <b>reload</b> it. A <b>Climate Organization Map</b> menu appears (give it a few seconds; it takes your map's name after setup).</li>
-        <li>That menu → <b>Set up sheet + forms (run once)</b>. Allow the permissions (if Google says the app isn't verified: <b>Advanced → Go to … (unsafe)</b>; it's your own script). Paste the address from step 1 when asked, and your core team's emails.</li>
-      </ol>
+      <h2><span class="num">Steps 5–8</span> Google Sheet and forms <span class="pill" id="p-sheet">checking…</span></h2>
+      <ul class="sub">
+        <li><b>Step 5.</b> Open <a href="https://sheets.new" target="_blank" rel="noopener">sheets.new</a> (a blank Google Sheet) with the Google account that should own the map. Name it: click "Untitled spreadsheet" at the top left, e.g. "<span class="map-title">your map</span> data".</li>
+        <li><b>Steps 6–7.</b> Copy the script: <button type="button" id="copy-script">Copy the sheet script</button> <span class="status" id="script-status"></span><br>
+          In the sheet: <b>Extensions</b> (menu bar) → <b>Apps Script</b>; it opens in a new tab.
+          <figure><img src="setup/extensions.svg" alt="Google Sheets menu bar: 1 Extensions, 2 Apps Script" loading="lazy"></figure>
+          Click inside the code, select all (Ctrl+A, Mac ⌘A), paste (Ctrl+V, Mac ⌘V), and click <b>Save</b> (the disk icon above the code). Leave this tab open for step 9.
+          <figure><img src="setup/editor.svg" alt="The Apps Script editor: 1 replace the code, 2 Save" loading="lazy"></figure></li>
+        <li><b>Step 8.</b> Go back to the sheet's tab and <b>reload it</b>. ⏳ After 5–10 seconds a <b>Climate Organization Map</b> menu appears after <b>Help</b> (it takes your map's name after setup). Click it → <b>Set up sheet + forms (run once)</b>.
+          <figure><img src="setup/menu.svg" alt="1 the Climate Organization Map menu after Help, 2 Set up sheet + forms" loading="lazy"></figure>
+          Google asks for permission: <b>OK</b> → choose your account → "Google hasn't verified this app": <b>Advanced</b> → <b>Go to Untitled project (unsafe)</b> → tick <b>Select all</b> → <b>Continue</b>. It's your own script; tick <b>Select all</b>, or setup fails partway.
+          <figure><img src="setup/permissions.svg" alt="1 OK, 2 Advanced, 3 Go to Untitled project (unsafe), 4 Select all, 5 Continue" loading="lazy"></figure>
+          If nothing happens after <b>Continue</b>, click <b>Set up sheet + forms</b> again. It asks for this map's address (copy it from the top of this page) and your core team's emails (blank = just you).<br>
+          ⏳ <b>Then don't touch anything for 1–3 minutes.</b> A "Running script" box shows at the top while tabs and forms appear by themselves. It's done when a popup says "Built and shared with the core team…": click <b>OK</b>.</li>
+      </ul>
       <p class="status" id="sheet-status"></p>
     </li>
     <li id="s-data">
-      <h2>Publish the sheet's data <span class="pill" id="p-data">checking…</span></h2>
-      <ol>
-        <li>In Apps Script: <b>Deploy → New deployment</b> → ⚙ <b>Web app</b>. Execute as: <b>Me</b>. Who has access: <b>Anyone</b>. <b>Deploy</b>, allow, then copy the <b>Web app URL</b> (ends in <code>/exec</code>).</li>
-        <li>Paste it into <code>map.config.ts</code> as <code>dataUrl</code>: <a id="edit-config-2" target="_blank" rel="noopener">edit map.config.ts</a>. Commit, wait a minute, reload this page.</li>
-      </ol>
+      <h2><span class="num">Steps 9–10</span> Publish the sheet's data <span class="pill" id="p-data">checking…</span></h2>
+      <ul class="sub">
+        <li><b>Step 9.</b> In the <b>Apps Script</b> tab: <b>Deploy</b> (blue, top right) → <b>New deployment</b> → click the <b>gear</b> next to "Select type" → <b>Web app</b>. Set <b>Execute as: Me</b> and <b>Who has access: Anyone</b>, then <b>Deploy</b>. If it shows <b>Authorize access</b>, click it and allow everything as in step 8.
+          <figure><img src="setup/deploy.svg" alt="1 Deploy, 2 New deployment, 3 the gear, 4 Web app, 5 Execute as Me, 6 Who has access Anyone, 7 Deploy" loading="lazy"></figure>
+          Click <b>Copy</b> under <b>Web app URL</b> (it ends in <code>/exec</code>), then <b>Done</b>.
+          <figure><img src="setup/deploy-url.svg" alt="1 Copy the web app URL" loading="lazy"></figure></li>
+        <li><b>Step 10.</b> Paste it between the quotes of <code>dataUrl: ""</code> in <a id="edit-config-2" target="_blank" rel="noopener">map.config.ts</a> (pencil icon), then <b>Commit changes…</b> → <b>Commit directly to the main branch</b> → <b>Commit changes</b>. ⏳ About 2 minutes, then reload this page.</li>
+      </ul>
       <p class="status" id="data-status"></p>
     </li>
     <li id="s-forms">
-      <h2>Forms connected to the map <span class="pill" id="p-forms">checking…</span></h2>
-      <p>Nothing to copy: the map reads the forms from the sheet. Try it: open the map, press <b>+</b>, and add a test organization. As an admin, it appears after a reload (about a minute). Delete test rows in the sheet when you're done.</p>
+      <h2><span class="num">Step 11</span> Try the forms <span class="pill" id="p-forms">checking…</span></h2>
+      <p>Nothing to copy: the map reads the forms from the sheet. Open the map, press <b>+</b>, and add your first group. ⏳ As an admin, it shows about a minute after you submit (reload the map). Delete test rows in the sheet when you're done.</p>
       <p class="status" id="forms-status"></p>
     </li>
     <li id="s-script">
-      <h2>Sheet script up to date <span class="pill" id="p-script">checking…</span></h2>
-      <p>After you get updates (GitHub: your repo → <b>Sync fork</b> → <b>Update branch</b>), the site may have a newer sheet script. To update the sheet: copy the script (step 3), paste it over <code>Code.gs</code>, Save, then <b>Deploy → Manage deployments → ✏️ → Version: New version → Deploy</b> (the URL stays the same), and run the menu's <b>Update the forms</b>.</p>
+      <h2><span class="num">Later</span> Sheet script up to date <span class="pill" id="p-script">checking…</span></h2>
+      <p>After you get updates (GitHub: your repo → <b>Sync fork</b> → <b>Update branch</b>), the site may have a newer sheet script. To update the sheet: copy the script (step 7), paste it over <code>Code.gs</code>, Save, then <b>Deploy → Manage deployments → ✏️ → Version: New version → Deploy</b> (the URL stays the same), and run the menu's <b>Update the forms</b>.</p>
       <p class="status" id="script-check"></p>
     </li>
   </ol>
@@ -150,7 +165,7 @@
     else { pill("p-config", "ok", "done"); status("config-status", "ok", "✓ " + esc(r.title) + (r.stateName ? " · " + esc(r.stateName) + " · " + esc(r.timeZone) : "")); }
 
     if (!r.dataUrl) {
-      pill("p-sheet", "", "next"); status("sheet-status", "", "Once the sheet is set up, step 4 connects it.");
+      pill("p-sheet", "", "next"); status("sheet-status", "", "Once the sheet is set up, steps 9–10 connect it.");
       pill("p-data", "warn", "to do"); status("data-status", "warn", "<code>dataUrl</code> is empty: the map shows its built-in backup (empty for a new map).");
       pill("p-forms", "", "waiting"); pill("p-script", "", "waiting");
       return;
@@ -172,7 +187,7 @@
       }
       if (!d.script_hash) { pill("p-script", "warn", "old"); status("script-check", "warn", "The sheet runs an older script that doesn't say its version. Update it as above."); }
       else if (d.script_hash === r.scriptHash) { pill("p-script", "ok", "done"); status("script-check", "ok", "✓ The sheet runs the same script as this site."); }
-      else if (d.script_hash === "dev") { pill("p-script", "warn", "check"); status("script-check", "warn", "The sheet's script was pasted from the repo, not from this site; paste it from step 3 to be sure it matches."); }
+      else if (d.script_hash === "dev") { pill("p-script", "warn", "check"); status("script-check", "warn", "The sheet's script was pasted from the repo, not from this site; paste it from step 7 to be sure it matches."); }
       else { pill("p-script", "warn", "update"); status("script-check", "warn", "The site has a newer sheet script than the sheet runs. Update it as above."); }
     }).catch(function (e) {
       pill("p-data", "bad", "not answering");

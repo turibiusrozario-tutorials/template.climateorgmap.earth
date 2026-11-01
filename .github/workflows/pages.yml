@@ -39,3 +39,7 @@ jobs:
           path: dist
       - id: deployment
         uses: actions/deploy-pages@v4
+      - name: Links
+        run: |
+          echo "### Your map: ${{ steps.deployment.outputs.page_url }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "Setup checklist: ${{ steps.deployment.outputs.page_url }}setup.html" >> "$GITHUB_STEP_SUMMARY"

@@ -16,6 +16,7 @@ import { webLogo } from "./weblogos";
 import { createFab, setFormLabelData, setItemLabelData } from "./fab";
 import { setPrefillData } from "./prefill";
 import { applyLiveForms } from "./forms.live";
+import { LIVE_DATA_URL } from "./data.config";
 import { checkSources } from "./sourcecheck";
 import { lazyPage, preloadWhenQuiet } from "./lazypage";
 import { atFallback, geoCanLocate } from "./placed";
@@ -206,11 +207,17 @@ async function main() {
   // Note at the top of the map (Nathan, Oct 29). The × hides it for this visit; drag it anywhere out of the way.
   let noteHidden = false;
   try { noteHidden = sessionStorage.getItem("openthink.devnote") === "1"; } catch { /* ignore */ }
-  if (!noteHidden) {
-    const link = h("a", { href: FORMS.feedback.url, target: "_blank", rel: "noopener" }, "please let us know");
+  // A new map that isn't connected to its sheet yet (no dataUrl in map.config.ts) points to its setup checklist instead.
+  const notSetUp = !LIVE_DATA_URL && currentMap.editable && !currentMap.combine;
+  if (!noteHidden || notSetUp) {
+    const link = notSetUp
+      ? h("a", { href: `${import.meta.env.BASE_URL}setup.html` }, "Open the setup checklist")
+      : h("a", { href: FORMS.feedback.url, target: "_blank", rel: "noopener" }, "please let us know");
     const close = h("button", { type: "button", class: "dev-note-x", "aria-label": "Hide this note", title: "Hide this note" }, "\u00d7");
     const note = h("div", { class: "dev-note", role: "note", title: "Drag to move" },
-      h("span", {}, "Note: this map is currently in development and uses data gathered from organization websites.  If you see any inaccuracies, ", link),
+      notSetUp
+        ? h("span", {}, "This map isn't connected to its Google Sheet yet. Setting it up? ", link, " →")
+        : h("span", {}, "Note: this map is currently in development and uses data gathered from organization websites.  If you see any inaccuracies, ", link),
       close,
     );
     close.addEventListener("click", () => {
